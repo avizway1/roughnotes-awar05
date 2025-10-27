@@ -1,0 +1,20 @@
+# Create the CLI plugin dir (root-wide)
+sudo mkdir -p /usr/local/lib/docker/cli-plugins
+
+# Pick the right binary for your CPU
+ARCH=$(uname -m)
+if [ "$ARCH" = "x86_64" ]; then
+  BIN=linux-x86_64
+else
+  BIN=linux-aarch64
+fi
+
+# Download latest Compose v2 release from Docker
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$BIN" \
+  -o /usr/local/lib/docker/cli-plugins/docker-compose
+
+# Make it executable
+sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+
+# Verify
+docker compose version

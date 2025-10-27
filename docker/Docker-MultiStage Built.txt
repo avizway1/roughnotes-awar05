@@ -1,0 +1,25 @@
+#Stage1 : COpy your index.html
+FROM alpine AS builder
+WORKDIR /app
+COPY . .
+
+#Stage2 : Nginx serves it
+FROM nginx:alpine
+RUN rm -rf /usr/share/nginx/html/*
+COPY --from=builder /app/* /usr/share/nginx/html/
+EXPOSE 80
+
+----
+
+#Builder-Stage
+FROM node:18 AS builder
+WORKDIR /app
+COPY . .
+RUN npm install && npm run build
+
+#Stage-1
+FROM nginx:alpine
+COPY --from=builder /app/build /usr/share/nginx/html/
+
+--> Static Sites, Compiling (Go, Java), need minimal image size
+--> Not required to use multi stage when we are running a simple scriots or config copy operation.. 

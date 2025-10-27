@@ -1,0 +1,11 @@
+services:
+  web:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - /home/ec2-user/myappdata:/usr/share/nginx/html
+  db:
+    image: mysql:latest
+    ports:
+      - "3306:3306"

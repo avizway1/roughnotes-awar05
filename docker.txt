@@ -217,10 +217,62 @@ CMD ["python","app.py"]
 docker build -t my-python-app:v1 .
 
 
+---
+
+Volumes : When we run a container, its file system is temporary. If you remove the container all data inside the container will loss.
+
+VOlumes = Peristant data storage.
+This volumes helps to keep data "outside of the container"..
 
 
+Volume : We can create volume by dokcer and we can mount it to the container..
+Bind Mount : We can map a host directory to the container.. 
+tmpfs mount: Stores data in RAM.. 
 
 
+docker volume ls			--> List the volumes we have in docker
+
+docker volume create my_data	--> Create a volume
+
+docker volume inspect my_data	--> Give volume info i.e; actual path where data is storing
+
+
+docker run -d --name mysql-db -v my_data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=MyPass@123 mysql:latest
+
+-v --> volume (my_data:/var/lib/mysql)
+
+---
+
+docker volume create shared_data
+
+cd /var/lib/docker/volumes/shared_data/_data
+
+created "index.html"
+
+docker run -d --name nginx-app -v shared_data:/usr/share/nginx/html/ -p 80:80 nginx:latest
+
+docker run -d --name httpd-app -v shared_data:/usr/local/apache2/htdocs -p 8080:80 httpd:latest
+
+---
+
+bind local
+
+cd /home/ec2-user
+mkdir myappdata
+Create some files i.e; index.html / other data
+
+docker run -d -p 80:80 -v /home/ec2-user/myappdata:/usr/share/nginx/html nginx
+
+
+##ReadOnly
+docker run -d -p 80:80 -v /home/ec2-user/myappdata:/usr/share/nginx/html:ro nginx
+
+---
+
+docker volume rm my_data	--> Remove the volume
+docker volume prune			--> Cleanup unused volume
+
+---
 
 
 

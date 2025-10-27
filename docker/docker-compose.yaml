@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres          # default user
+      POSTGRES_PASSWORD: avinash       # set password
+      POSTGRES_DB: postgres            # default database
+    ports:
+      - "5432:5432"                     # expose to host if needed
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  adminer:
+    image: adminer:latest
+    ports:
+      - "8080:8080"                     # web UI on http://localhost:8080
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
+
+  
