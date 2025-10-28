@@ -275,12 +275,30 @@ docker volume prune			--> Cleanup unused volume
 ---
 
 
+docker build -t <name>:<tag> .			--> Docker file should be in same location (Dockerfile)
+
+docker build -t <name>:<tag> ./app		--> If Docker file is in diff location (Dockerfile)
+
+docker build -f Dockerfile.dev -t <name>:<tag> ./app --> Build with diff file name
+
+docker build --no-cache -t <name>:<tag> .		--> Forcefully rebuild all layers by ignoring the cached layers/data.
+
+docker build --label owner="Avinash" -t <name>:<tag> .		--> We can pass metadata
 
 
+---
+
+hub.docker.com			--> Signup
 
 
+Your password will be stored unencrypted in /root/.docker/config.json
+
+rm /root/.docker/config.json
 
 
+docker tag local-image-name:tag <docker-username>/imagename:tag
+
+docker push thipparthiavinash/mycalapp-awar05:latest
 
 
 
