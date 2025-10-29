@@ -301,6 +301,67 @@ docker tag local-image-name:tag <docker-username>/imagename:tag
 docker push thipparthiavinash/mycalapp-awar05:latest
 
 
+=============
+
+We need Container Archiestrators primarily for 2 purposes..
+
+1. Auto Scaling (Just like ec2 auto scaling) : scales the containers count based on the load..
+2. Auto healing : Due to any issues, if any container fails, it creates another contianer quickly.
+
+--> Docker Swarm
+--> ECS (Elastic Container Service)
+--> Kubernetes / EKS (Elastic Kubernetes Service)
+
+
+ECR/DockerHub : These are the Repo services to store our images.
+
+ECS : 
+1. Cluster : Where our containers/Task/Workloads runs..
+2. Task Definition : Configuration settings for the task you are going to run in ECS Cluster.. (We can define settings i.e; Memory, CPU, Image URI)
+3. Task : Nothing but a container.. Task need 2 things 1. Cluster 2. Task Def...
+4. Service : Combination of tasks which is delivering same thing.. It has capability to maintain Desired count of no. of tasks.. Has capability to add tasks to Load Balancer and Auto Scaling..
+
+
+Fargate only : Serverless – you don't think about creating or managing servers. Great for most common workloads.
+
+Fargate and managed instances : Managed instances - Amazon ECS will manage patching and scaling on your behalf while giving you configurability about the types of instances. Great for more advanced workloads.
+Fargate and Self-managed instances
+
+Self-managed instances - you must ensure the instances are patched and scaled properly, and you have full control over the instances.
+
+
+---
+
+Step 1 : Create an ECS cluster.. Provide a name, Choose "enhanced logging".. THen create.. 
+
+Step 2 : Create a Task Definition (Name, ECS Task Role, ECS Task Execution role, ECR Image URI, Port Number, Logs)
+
+Step 3 : 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
