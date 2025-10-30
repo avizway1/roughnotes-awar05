@@ -336,10 +336,26 @@ Step 1 : Create an ECS cluster.. Provide a name, Choose "enhanced logging".. THe
 
 Step 2 : Create a Task Definition (Name, ECS Task Role, ECS Task Execution role, ECR Image URI, Port Number, Logs)
 
-Step 3 : 
+Step 3 : Now create a task using the Task definition and verify the output using the public IP.. Now terminate the task and observe the task recreation.??? It wont happen
+
+TO maintain desired count, you need to depends on "service".. 
+
+Step 4 ; create a Service, provide Task definition informaiton.. choose replica as 2 and choose the default vpc and enable public IP and test the output..
+
+Now, terminate one of the task and it should recreate automatically..
+
+=====
+
+ECS has 3 types of Deployment options..
+
+1. Fargate : AWS manages the servers
+2. EC2 : Our tasks runs inside an ec2 instance (AWS managed Instance, Customer managed)
+3. ECS Anywhere : We can run tasks on our own hardware.. 
+
+ECS works as orchestrator.. But compute capacity comes from customer..
 
 
-
+===
 
 
 
