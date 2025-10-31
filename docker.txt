@@ -359,6 +359,8 @@ ECS works as orchestrator.. But compute capacity comes from customer..
 
 
 
+curl --proto "https" -o "/tmp/ecs-anywhere-install.sh" "https://amazon-ecs-agent.s3.amazonaws.com/ecs-anywhere-install-latest.sh" && bash /tmp/ecs-anywhere-install.sh --region "ap-south-1" --cluster "myecscluster" --activation-id "2a9df9ee-4aea-4dca-95d6-5f728b0579a4" --activation-code "7zRXk/mUJWC3xQhhbvS2"
+
 
 
 

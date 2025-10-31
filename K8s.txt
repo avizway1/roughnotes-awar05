@@ -1,0 +1,107 @@
+K8s Primary Components: 
+
+K8s 	--> K8s
+O11y	--> Observability
+
+CONTROL PLANE COMPONENTS: (BRAIN)
+
+API Server (kube-apiserver) : Entry point to our Kubernetes.. Front door of K8s.. It handles all the requests from the users and the other tools..
+
+--> kubectl apply -f manifest.yaml	--> It communicates with "api server".. API server validates.. 
+
+--> (kubectl get pods) 
+API server receives the request (kubectl) and retives the data from etcd and return with pods list.
+
+-------
+
+etcd (key-value store) : Stores all the cluster data/metadata (configuration, deployment, state)
+
+Its like a database, Contains cluster data (pod status, deployments, configuration)
+--> etcd will have our cluster desired info..
+--> Maintans the cluster desired and current state.. 
+
+--> kubectl apply -f app.yaml (2 pods) (Api server takes the req, etcd stores the desired state)
+
+-------
+
+Controller Manager (kube-controller-manager) : Ensure desired state of the cluster (Replicas count, failed pods, node health)
+
+--> It checks "etcd" and ensures the cluster matches the "desired state"..
+--> CM has diff controllers:
+	Node Controller : Monitors the node health, It can replace the failed nodes..
+	Job Controller : Looks for job objects, Create pods to run those tasks..
+	Service Account Controller : manages the authentication tokens..
+
+---
+
+Scheduler (Kube-Scheduler) : Decides where our workload i.e; pods should run, It chooses nodes based on the resources availability.. 
+
+--> Whenever we are creating any workload, THis chooses the node based on resource availability and tolerations.
+
+---
+
+Cloud Controller Manager / CCM : Helps to integrate K8s with cloud service providers and its resources i.e; vpc, load balancer, storage..
+
+
+---
+---
+
+WORKER NODE : (Actual Work happens)
+
+A worker node is where the actual application runs. 
+
+--> Control Plane managers the clusters
+--> Worker nodes executes the workload.
+
+
+kubelet : Like an agent, runs on every worker node.
+--> Talks to the API server and maintains/runs the pod properly.
+--> Contineously monitors the health of the pods and reports back to the control plane (controller manager)
+
+When scheduler assign a pod to a worker, Kubelet receives the instructions, It uses Container runtime and run the workload.. If pod fails, It restarts is automatically...
+
+----
+
+Container Runtime : helps to run containers
+
+--> We need it, if we want to pull an image, running a container or maintaining container lifecylce.
+--> Docker, Containerd, CRIO
+
+----
+
+Kube-proxy : Networking component
+
+--> Handles the communication between pods.
+--> Helps to assign a unique IP address for every pods runs on the node.
+--> Helps to perform load balancing between pods with in a service.
+
+---
+
+POD : Smallest deployable unit in K8s..
+
+Pod is nothing but a container or multiple containers wrapped around.
+Every pod will have a unique IP address with the cluster.
+
+
+-----
+
+Container : Standalone exucutable software unit that contains everything nrequired to run an application i.e; code, system libraries, dependecies, runtime...
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
