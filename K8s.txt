@@ -88,15 +88,58 @@ Every pod will have a unique IP address with the cluster.
 Container : Standalone exucutable software unit that contains everything nrequired to run an application i.e; code, system libraries, dependecies, runtime...
 
 
+---
+
+ReplicaSet / RS : It helps to run our pods with required identical copies. Due to any issue if any pod goes down, it creates another pod automatically.
+--> Maintains desired number of pod replicas.
+--> Automatically creates another copy of the pod, if an existing pod is deleted/crashed.
+--> We do have option to manually adjust the replicas.
+--> Replicaset dont support rolling updates. 
+kubectl get rs
+kubectl get replicaset
+
+---
+
+Deployment : Higher level abstraction of Replicaset.
+--> It supports Rolling updates and Scaling the resources without downtime.
+
+Version 1 --> version 2 --> we can upgrade without much downtime.
+
+--> helps us to have fixed number of replicas (Depends on ReplicaSet)
+--> For Zero Downtime, it defaultly uses Rolling Updates
+--> We can RollBack if deployment fails.
+
+---
+
+Rolling Update : helps us to migrate an app/.pod from one version to another version with zero downtime.
+
+MaxUnavailable : 1 (Max of 1 pod can be terminated during th upgrade)
+MaxSurge : 2 (2 extra pods can be created temporarily)
+
+---
+
+Cluster IP : It exposes the service on a cluster Internal IP. Service works within the cluster..
+--> Frontend application taliking to internal backend application.
+
+NodePort : Expositing our application outside using Node/ec2-instance public IP.
+
+LoadBalancer : Exposing application using a dedicated LB to outside world.
 
 
+----
 
+eksctl create cluster --name=ekswithavinash1 --version 1.33 --region ap-south-1 --zones=ap-south-1a,ap-south-1b --nodegroup-name ng-default --node-type t3.small --nodes 2 --node-ami-family=AmazonLinux2023 --managed
 
+eksctl utils associate-iam-oidc-provider --region ap-south-1 --cluster ekswithavinash1 --approve
 
+eksctl delete cluster --name ekswithavinash1
 
+---
 
-
-
+kubectl get all
+kubectl get pods
+kubectl get rs
+kubectl get deployment
 
 
 
