@@ -128,11 +128,11 @@ LoadBalancer : Exposing application using a dedicated LB to outside world.
 
 ----
 
-eksctl create cluster --name=ekswithavinash1 --version 1.33 --region ap-south-1 --zones=ap-south-1a,ap-south-1b --nodegroup-name ng-default --node-type t3.small --nodes 2 --node-ami-family=AmazonLinux2023 --managed
+eksctl create cluster --name=ekswithavinash --version 1.33 --region ap-south-1 --zones=ap-south-1a,ap-south-1b --nodegroup-name ng-default --node-type t3.small --nodes 2 --node-ami-family=AmazonLinux2023 --managed
 
-eksctl utils associate-iam-oidc-provider --region ap-south-1 --cluster ekswithavinash1 --approve
+eksctl utils associate-iam-oidc-provider --region ap-south-1 --cluster ekswithavinash --approve
 
-eksctl delete cluster --name ekswithavinash1
+eksctl delete cluster --name ekswithavinash
 
 ---
 
@@ -140,6 +140,87 @@ kubectl get all
 kubectl get pods
 kubectl get rs
 kubectl get deployment
+
+kubectl get svc
+kubectl get service
+kubectl describe svc cal-service
+
+kubectl describe pod <pod-name>
+
+
+--
+
+Control Plane
+ - api server
+ - etcd
+ - kube scheduler
+ - control manager
+ - cloud controller manager
+ 
+Worker Node
+ - kubelet
+ - kubeproxy
+ - container runtime
+
+Node
+pods
+Container
+replicaset
+deployment
+services
+ -ClusterIP
+ -NodePort
+ -loadBalancer
+
+Whenever we are using AWS EKS, AWS manages the complete "Control PLane" components, AWS cost us "0.10$/Hr".. 
+Standard Support : 0.10$/hr
+Extended Support : 0.60$/hr
+
+AWS runs 3 copies of our K8s control plane across 3 Different AZs with in the Region.
+If 1 AZ goes down, no operational effect on our resources..
+AWS handles the scaling, patching and Disaster recovery for the master nodes/Control plane.
+
+---
+
+1. AWS EC2 Self Managed Node Groups : Customer/we/you need to provision, configure and manage ec2 instances for running our workload/Worker Nodes. 
+--> Customer has to take care scaling, patching OS security and updates.
+--> You need to choose specific approved AMIs.
+
+2. AWS EC2 managed Node Groups : AWS manages the Creation, configuration of the worker nodes.
+--> AWS takes careos patching, updates, scaliing..
+--> AWS uses "Amazon Linux 2 (till v1.32)", "amazonLinux 2023 (from v1.33)" and "Bottlerocket" as AMI.
+--> Whenever we are launching workload, we need to choose the "Instance Type"
+
+3. Fargate : Serverless - No need to manage ec2 instances. AWS automatically provision the pods, We dont get any nodes. Pay-per-usage. No need to worry about OS patching. 
+
+4. Auto Mode : Cluster infrastructure managed by AWS includes many Kubernetes capabilities as core components, as opposed to add-ons, such as compute autoscaling, pod and service networking, application load balancing, cluster DNS, block storage, and GPU support.
+--> AWS chooses the configuration automatically, scaled the workload automatically.
+--> if you choose AutoMode, AWS cost us very very less for the configurqations we select.
+
+
+---
+
+Pre-Requisites to Launch EKS cluster.
+
+1. AWS CLI, COnfigure CLI user with Admin Access
+2. install EKSCTL
+3. Install Kubectl
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: cal-rs
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cal-app
+  template:
+    metadata:
+      labels:
+        app: cal-app
+    spec:
+      containers:
+        - name: caliculator
+          # image: 982424467695.dkr.ecr.ap-south-1.amazonaws.com/mycalapp-awar05
+          image: thipparthiavinash/mycalapp-awar05
+          ports:
+            - containerPort: 8080

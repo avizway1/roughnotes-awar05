@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cal-deployment
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: cal-app
+  template:
+    metadata:
+      labels:
+        app: cal-app
+    spec:
+      containers:
+        - name: cal-app-container
+          image: thipparthiavinash/mycalapp-awar05
+          ports:
+            - containerPort: 8080
