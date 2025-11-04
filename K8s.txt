@@ -130,7 +130,17 @@ LoadBalancer : Exposing application using a dedicated LB to outside world.
 
 eksctl create cluster --name=ekswithavinash --version 1.33 --region ap-south-1 --zones=ap-south-1a,ap-south-1b --nodegroup-name ng-default --node-type t3.small --nodes 2 --node-ami-family=AmazonLinux2023 --managed
 
+
+OIDC : IAM OpenID COnnect : This allows AWS IAM to authenticate with K8s serviceaccounts, IAM permisisons and roles.
+
+
+aws eks describe-cluster --name ekswithavinash --query "cluster.identity.oidc.issuer"
+
+If above command returns nothing, provide OIDC provider approval.. 
+
+'''
 eksctl utils associate-iam-oidc-provider --region ap-south-1 --cluster ekswithavinash --approve
+'''
 
 eksctl delete cluster --name ekswithavinash
 
@@ -206,13 +216,65 @@ Pre-Requisites to Launch EKS cluster.
 2. install EKSCTL
 3. Install Kubectl
 
+---
 
 
 
+kubectl cluster-info				--> proviodes the cluster info
+kubectl cluster-info dump
+kubectl get nodes					--> List the nodes associated with cluster
+kubectl describe node ip-192-168-3-19.ap-south-1.compute.internal
+
+kubectl get pods
+
+kubectl get all -A					--> Displays all the resources from all namespaces
+
+kubectl get pods,services
+
+kubectl get service,deployment -A
+
+kubectl logs pod/cal-deployment-5dbcc68c56-n5gw5		--> Displays the logs from a pod
+
+kubectl exec -it pod/cal-deployment-5dbcc68c56-n5gw5 -- /bin/sh		--> Connect to a pod
+
+kubectl delete pod/svc/rs <name>									--> To delete the resource
+
+kubectl deploy -f <filename>.yml				--> Do the deployment
+
+kubectl scale deployment cal-deployment --replicas=2			--> we can adjust the deployment properties using command line
+
+kubectl apply -f 03-deployment.yml --dry-run=server 			--> helps to perform dryrun
+
+kubectl top nodes 					--> Displays the resources usage (CPU, Memory)
+
+kubectl port-forward <pod-name> <laptop-port>:<pod-port>		
+
+kubectl get events					--> Displays the cluster events info 
+
+---
+
+Namespace : Helps to logically isolate or seperate the resources in K8s..
+--> Multi-Tenant : Multiple teams can use only one cluster without interfering other teams work..
+--> Resource limits: we cna setup resource quotas for better workload management..
 
 
+kubectl get ns
+
+kubectl create ns dev-namespace 			--> Create a Namespace
+
+NAME              STATUS   AGE
+default --> our workload runs here. If we run anything without specifying ns explicitly.
+kube-node-lease --> manages the node ATT/heartbeat to track node availability.
+kube-public --> Publicly readable namespace used for cluster-wide information..
+kube-system --> K8s backend/support core/system components runs here.. i.e; CoreDNS, kube-proxy, monitoring..
 
 
+kubectl get all -n kube-system		--> Display resources from a specific namespace
+
+
+---
+
+limitranege : Helps to setup the resource limits/quotas.
 
 
 

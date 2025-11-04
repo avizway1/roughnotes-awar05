@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: dev-limits
+  namespace: dev-namespace
+spec:
+  limits:
+  - default:
+      cpu: "1"              #Max CPU a container can utilise
+      memory: "1Gi"         #Max memory a container can utilise
+    defaultRequest:
+      cpu: "0.5"              #Default Requested CPU
+      memory: "512Mi"         #Default Requested memory
+    type: Container

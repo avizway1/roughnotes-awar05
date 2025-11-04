@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: limit-failed
+  namespace: dev-namespace
+  labels:
+    app: cal-app
+spec:
+  containers:
+    - name: caliculator
+      # image: 982424467695.dkr.ecr.ap-south-1.amazonaws.com/mycalapp-awar05
+      image: thipparthiavinash/mycalapp-awar05
+      resources:
+        requests:
+          memory: "2Gi"   #Within allowed range we setup at ns
+          cpu: "2"        #Within allowed range we setup at ns
+        limits:
+          memory: "2Gi"     #Max Allowed CPU
+          cpu: "3"          #max Allowed memory
+      ports:
+        - containerPort: 8080
