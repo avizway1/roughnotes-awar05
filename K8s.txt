@@ -355,6 +355,24 @@ kubectl get pods -A
 
 =====
 
+configMap : Equalant to "AWS SSM parameter Store"
+Secrets: Equalant to "AWS Secrets Manager"
+
+
+Create a file with al your sensitive info
+
+kubectl create configmap db-config --from-env-file=config.txt
+
+---
+
+kubectl create secret generic db-secret --from-file=dbpassword.txt
+
+
+--
+
+kubectl get secret db-secret -o jsonpath='{.data.DB_PASSWORD}' | base64 -d
+
+
 
 
 

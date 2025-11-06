@@ -1,0 +1,4 @@
+# config.txt
+DB_HOST=mydb.example.com
+DB_PORT=3306
+
