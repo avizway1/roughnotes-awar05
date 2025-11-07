@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-deployment
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: nodeapp
+  template:
+    metadata:
+      labels:
+        app: nodeapp
+    spec:
+      containers:
+        - name: nodeapp
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command: ["node", "-e", "require('http').createServer((req, res) => res.end('Hello from Node.js..Version Test -3- Pushed wrong code!')).listen(3000)"]
+          ports:
+            - containerPort: 3000

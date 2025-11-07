@@ -1,0 +1,13 @@
+# relok8s image hints file
+# This file makes this Helm Chart relocatable by relok8s
+# More info here https://github.com/vmware-tanzu/asset-relocation-tool-for-kubernetes
+#
+# nginx chart
+
+# nginx image
+- "{{.image.registry}}/{{.image.repository}}:{{.image.tag}}"
+# git image
+- "{{.cloneStaticSiteFromGit.image.registry}}/{{.cloneStaticSiteFromGit.image.repository}}:{{.cloneStaticSiteFromGit.image.tag}}"
+# nginx-exporter image
+- "{{.metrics.image.registry}}/{{.metrics.image.repository}}:{{.metrics.image.tag}}"
+

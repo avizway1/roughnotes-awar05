@@ -1,0 +1,25 @@
+replicaCount: 1
+
+image:
+  repository: node
+  pullPolicy: IfNotPresent
+  tag: latest
+
+service:
+  type: NodePort
+  port: 3000
+  nodePort: 32000  # Choose a port in range 30000-32767
+
+ingress:
+  enabled: false
+
+resources: {}
+
+autoscaling:
+  enabled: false
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
