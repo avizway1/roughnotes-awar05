@@ -461,16 +461,42 @@ Gi --> Gibibytes
 1 Gi = 1024 Mi
 
 
+====
+
+
+eksctl create cluster --name=ekswithavinash --version 1.33 --region ap-south-1 --zones=ap-south-1a,ap-south-1b --nodegroup-name ng-default --node-type t3.small --nodes 2 --node-ami-family=AmazonLinux2023 --managed
+
+eksctl utils associate-iam-oidc-provider --region ap-south-1 --cluster ekswithavinash --approve
+
+aws eks describe-nodegroup --cluster-name ekswithavinash --nodegroup-name ng-default
+
+
+helm repo add autoscaler https://kubernetes.github.io/autoscaler
+helm repo update
+helm install cluster-autoscaler autoscaler/cluster-autoscaler \
+  --namespace kube-system \
+  --set autoDiscovery.clusterName=ekswithavinash \
+  --set awsRegion=ap-south-1 \
+  --set extraArgs.balance-similar-node-groups=true \
+  --set extraArgs.skip-nodes-with-system-pods=false
 
 
 
+---
+
+eksctl create iamserviceaccount   \
+   --name ebs-csi-controller-sa   \
+   --namespace kube-system   \
+   --cluster ekswithavinash  \
+   --attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy  \
+   --approve \
+   --role-only \
+   --role-name AmazonEKS_EBS_CSI_DriverRole
+
+export SERVICE_ACCOUNT_ROLE_ARN=arn:aws:iam::982424467695:role/AmazonEKS_EBS_CSI_DriverRole
 
 
-
-
-
-
-
+aws ecr-public get-login-password --region us-east-1 | helm registry login --username AWS --password-stdin public.ecr.aws
 
 
 
