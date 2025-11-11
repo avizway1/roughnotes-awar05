@@ -1,0 +1,42 @@
+# Stable version
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stable-deploy
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: canary
+      track: stable
+  template:
+    metadata:
+      labels:
+        app: canary
+        track: stable
+    spec:
+      containers:
+      - name: canary
+        image: nginx:1.19
+
+---
+# Canary version
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: canary-deploy
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: canary
+      track: canary
+  template:
+    metadata:
+      labels:
+        app: canary
+        track: canary
+    spec:
+      containers:
+      - name: canary
+        image: nginx:1.20

@@ -1,0 +1,89 @@
+# KUBERNETES HEALTH PROBES DEMONSTRATION
+# 
+# THREE TYPES OF PROBES:
+# 1. STARTUP PROBE: Checks if container has started successfully
+# 2. READINESS PROBE: Checks if container is ready to receive traffic
+# 3. LIVENESS PROBE: Checks if container is still running healthy
+#
+# PROBE EXECUTION ORDER: Startup → Readiness → Liveness (ongoing)
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healthcheck-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: healthcheck
+  template:
+    metadata:
+      labels:
+        app: healthcheck
+    spec:
+      containers:
+        - name: app
+          # Using nginx with custom health endpoints via configmap
+          image: nginx:1.25
+          ports:
+            - containerPort: 80
+          
+          # STARTUP PROBE: Runs FIRST, before other probes
+          # Purpose: Protects slow-starting containers from being killed by liveness probe
+          # Behavior: Disables liveness/readiness until startup succeeds
+          startupProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10    # Wait 10s before first check
+            periodSeconds: 5           # Check every 5s
+            failureThreshold: 6        # Allow 6 failures (30s total)
+            timeoutSeconds: 3          # 3s timeout per check
+          
+          # READINESS PROBE: Determines if pod should receive traffic
+          # Purpose: Controls service endpoint inclusion
+          # Behavior: Pod removed from service if fails, added back when passes
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5     # Start checking after 5s
+            periodSeconds: 10          # Check every 10s
+            failureThreshold: 3        # 3 failures = not ready
+            successThreshold: 1        # 1 success = ready
+            timeoutSeconds: 5          # 5s timeout per check
+          
+          # LIVENESS PROBE: Determines if container should be restarted
+          # Purpose: Detects deadlocks, infinite loops, unresponsive states
+          # Behavior: Kills and restarts container if fails
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 15    # Wait 15s before first check
+            periodSeconds: 20          # Check every 20s
+            failureThreshold: 3        # 3 failures = restart container
+            timeoutSeconds: 5          # 5s timeout per check
+          
+          # Resource limits to prevent resource exhaustion
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+
+---
+# SERVICE TO DEMONSTRATE READINESS PROBE EFFECT
+apiVersion: v1
+kind: Service
+metadata:
+  name: healthcheck-service
+spec:
+  selector:
+    app: healthcheck
+  ports:
+    - port: 80
+      targetPort: 80
+  type: ClusterIP

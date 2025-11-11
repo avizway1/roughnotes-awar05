@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rolling-deploy
+spec:
+  replicas: 4
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  minReadySeconds: 20   #Delay of 20 seconds before moving to next pod
+  selector:
+    matchLabels:
+      app: rollingapp
+  template:
+    metadata:
+      labels:
+        app: rollingapp
+    spec:
+      containers:
+      - name: rollingapp
+        image: nginx:1.19
+        ports:
+        - containerPort: 80

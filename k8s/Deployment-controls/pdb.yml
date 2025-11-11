@@ -1,0 +1,94 @@
+# POD DISRUPTION BUDGET (PDB) DEMONSTRATION
+#
+# WHAT IS PDB?
+# - Ensures minimum number of pods stay running during voluntary disruptions
+# - Protects applications from becoming unavailable during maintenance
+# - Only applies to VOLUNTARY disruptions (not node failures or crashes)
+#
+# VOLUNTARY DISRUPTIONS: Node drain, cluster upgrade, scaling down
+# INVOLUNTARY DISRUPTIONS: Node crash, hardware failure, kernel panic
+
+---
+# STEP 1: Create a deployment with multiple replicas
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+  labels:
+    app: web-app
+spec:
+  replicas: 5  # We want 5 pods running
+  selector:
+    matchLabels:
+      app: web-app
+  template:
+    metadata:
+      labels:
+        app: web-app
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.25
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+
+---
+# STEP 2: Create Pod Disruption Budget
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: web-app-pdb
+spec:
+  # SELECTOR: Which pods this PDB applies to
+  selector:
+    matchLabels:
+      app: web-app  # Must match deployment labels
+  
+  # OPTION 1: Minimum available pods (choose one option)
+  minAvailable: 3  # Always keep at least 3 pods running
+  
+  # OPTION 2: Maximum unavailable pods (alternative to minAvailable)
+  # maxUnavailable: 2  # Allow maximum 2 pods to be down
+  # maxUnavailable: "40%"  # Allow 40% of pods to be unavailable
+
+# HOW IT WORKS:
+# - With 5 replicas and minAvailable: 3
+# - Kubernetes will only allow 2 pods to be disrupted at once
+# - If you try to drain a node with 3 pods, only 2 will be evicted
+# - The 3rd eviction will be blocked until other pods are rescheduled
+
+---
+# STEP 3: Service to demonstrate availability
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-app-service
+spec:
+  selector:
+    app: web-app
+  ports:
+    - port: 80
+      targetPort: 80
+  type: ClusterIP
+
+# TESTING SCENARIOS:
+#
+# 1. NORMAL OPERATION:
+#    kubectl get pods -l app=web-app
+#    Result: 5 pods running
+#
+# 2. VOLUNTARY DISRUPTION (Node Drain):
+#    kubectl drain <node-name> --ignore-daemonsets
+#    Result: Only 2 pods evicted at once, 3 remain available
+#
+# 3. CHECK PDB STATUS:
+#    kubectl get pdb web-app-pdb
+#    Shows: ALLOWED DISRUPTIONS and current status
+#
+# 4. SIMULATE DISRUPTION:
+#    kubectl delete pod <pod-name>  # This bypasses PDB (direct deletion)
+#    kubectl drain node             # This respects PDB

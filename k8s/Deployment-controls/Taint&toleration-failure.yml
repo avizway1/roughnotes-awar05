@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: no-toleration-pod
+spec:
+  nodeSelector:
+    disktype: ssd  # This will try to force it to the tainted node
+  containers:
+    - name: nginx
+      image: nginx:1.25

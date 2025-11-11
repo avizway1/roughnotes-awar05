@@ -499,6 +499,61 @@ export SERVICE_ACCOUNT_ROLE_ARN=arn:aws:iam::982424467695:role/AmazonEKS_EBS_CSI
 aws ecr-public get-login-password --region us-east-1 | helm registry login --username AWS --password-stdin public.ecr.aws
 
 
+---
+
+eksctl utils associate-iam-oidc-provider --region ap-south-1 --cluster ekswithavinash --approve
+
+---
+
+Rolling Update : Default deployment strategy K8s provides.. 
+Maxunavailable : 1
+MaxSurge : 2
+
+--> if we dont define Maxunavailable/max surge.. It picks 25% as default..
+
+kubectl apply -f <name>.yml
+kubectl set image deployment\rolling-deploy rollingapp=nginx:1.20
+kubectl rollout status deployment/rolling-deploy
+---
+
+Recreate Deployment : old pods will be killed and new pods are created. It causes downtime but its simple and clean. We dont use this in production environment as it causes some downtime.
+
+---
+
+Blue / green Deployment : 
+We have to run 2 seperate/different environments.. (blue --> current.. Green --> new)
+--> Safest deployment method.. You need extra resources 
+
+---
+
+Canary Deployment : Gradually sens traffic to newer version in phased manner i.e; 10%, 30%, 40%, 50%..
+This required multiple dfeployments or service controllers..
+
+
+=====================
+
+
+Affinities : We can control where the pod should run..
+
+Pod Affinity : Assume, we have 2 pods for our application.. If we implement pod affinity, both the pods runs together (on same node).. 
+
+Node Affinity : Assume, your workload is related to DB and this should run in a node labelled as "db".. 
+
+Pod anti-affinity : Pods will span/spread across nodes.. both pods wont run on same node..
+
+
+--> node affinity
+
+kubectl label nodes ip-192-168-32-231.ap-south-1.compute.internal disktype=ssd
+
+
+---
+
+https://github.com/GoogleCloudPlatform/kubectl-ai
+
+
+
+
 
 
 
