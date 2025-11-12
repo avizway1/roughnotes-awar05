@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: timing-app
+spec:
+  replicas: 2
+  minReadySeconds: 20
+  progressDeadlineSeconds: 120
+  selector:
+    matchLabels:
+      app: timing
+  template:
+    metadata:
+      labels:
+        app: timing
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: app
+          image: busybox
+          command: ["sh", "-c", "sleep 3600"]

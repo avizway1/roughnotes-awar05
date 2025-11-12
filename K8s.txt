@@ -552,6 +552,102 @@ kubectl label nodes ip-192-168-32-231.ap-south-1.compute.internal disktype=ssd
 https://github.com/GoogleCloudPlatform/kubectl-ai
 
 
+---
+
+Taint (Node): Like a bus seat marked "Reserved".
+Toleration (Pod): The special pass that lets you sit there. 👉 Without the pass, you cannot sit on the reserved seat.
+
+
+Step 1 : Add a label to a "node", so that we can force our pod to run on that specific node using "NodeSelector"
+
+Step 2 : Taint the same node
+
+kubectl taint nodes ip-192-168-58-148.ap-south-1.compute.internal role=db:NoSchedule
+
+kubectl taint nodes ip-192-168-58-148.ap-south-1.compute.internal role=db:NoSchedule-
+
+
+step 3 : Deploy the pod with tolarations.. and it should launch on the tainted instance only..
+
+Step 4 ; Deploy the pod without tolaration, and enforce it to run on the same node.. It should fail..
+
+
+Events:
+  Type     Reason            Age   From               Message
+  ----     ------            ----  ----               -------
+  Warning  FailedScheduling  48s   default-scheduler  0/2 nodes are available: 1 node(s) didn't match Pod's node affinity/selector, 1 node(s) had untolerated taint {role: db}. preemption: 0/2 nodes are available: 2 Preemption is not helpful for scheduling
+
+---
+
+KUBERNETES HEALTH PROBES DEMONSTRATION
+ 
+THREE TYPES OF PROBES:
+1. STARTUP PROBE: Checks if container has started successfully
+2. READINESS PROBE: Checks if container is ready to receive traffic
+3. LIVENESS PROBE: Checks if container is still running healthy
+
+---
+
+minReadySeconds: Delay before a pod is considered available after becoming ready (helps avoid sending traffic too soon).
+progressDeadlineSeconds: Max time for a rollout to complete before it's considered failed.
+terminationGracePeriodSeconds: Time for a pod to shut down gracefully before being killed.
+
+---
+
+PDB : Pod Distruption Budget : Its a K8s settings to tell the system how many pods of our application "must stay running" when something happens i.e; node upgrade or node maintenance window/operations..
+
+
+Purpose: Ensures only a limited number of pods are down during voluntary disruptions (e.g., node drain, upgrades).
+
+
+--> minAvaialable : 
+--> maxUnavailable : 
+
+
+kubectl drain <node-name> --ignore-daemonsets
+
+kubectl drain ip-192-168-29-249.ap-south-1.compute.internal --ignore-daemonsets
+
+kubectl uncordon ip-192-168-29-249.ap-south-1.compute.internal
+
+----
+
+container
+pod
+replica set
+deployment (Rolling update, blue green, shadow, canary, recreate)
+service	(ClusterIP, NodePort, LB, headless)
+namespace
+daemonsets
+statefulsets
+configmaps
+secrets
+hpa
+vpa
+cluster auto scaler
+goldilocks
+helm
+oidc
+servcie account
+ebs csi drivers
+affinities
+tains and tolerations
+pdb
+probes
+ingress control
+istio
+promotheous
+grafana
+slack integrations
+auto mode
+fargate
+kops
+
+
+
+
+
+
 
 
 
