@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev-namespace
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cal-deployment
+  namespace: dev-namespace
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cal-app
+  template:
+    metadata:
+      labels:
+        app: cal-app
+    spec:
+      containers:
+        - name: cal-app-container
+          image: thipparthiavinash/mycalapp-awar05
+          ports:
+            - containerPort: 8080
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: cal-service
+  namespace: dev-namespace
+spec:
+  selector:
+    app: cal-app
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+      nodePort: 30000
+  type: NodePort

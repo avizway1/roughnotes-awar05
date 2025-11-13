@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev-namespace
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 2048-deployment
+  namespace: dev-namespace
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: 2048-app
+  template:
+    metadata:
+      labels:
+        app: 2048-app
+    spec:
+      containers:
+        - name: 2048-app-container
+          image: thipparthiavinash/2048-game
+          ports:
+            - containerPort: 80
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: game-2048-service
+  namespace: dev-namespace
+spec:
+  selector:
+    app: 2048-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      nodePort: 30001
+  type: NodePort
