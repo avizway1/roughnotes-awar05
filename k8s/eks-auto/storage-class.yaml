@@ -1,0 +1,17 @@
+# This StorageClass configures dynamic provisioning of EBS volumes in EKS:
+# - Uses the EBS CSI driver as provisioner
+# - Sets this as the default storage class via annotation
+# - Uses gp3 volume type for better performance/cost
+# - Enables encryption by default for security
+# - WaitForFirstConsumer delays volume binding until pod is scheduled
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: auto-ebs-sc
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: ebs.csi.eks.amazonaws.com
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  type: gp3
+  encrypted: "true"

@@ -1,0 +1,71 @@
+1) Install Argo Rollouts controller into your EKS cluster
+
+kubectl create namespace argo-rollouts
+kubectl apply -n argo-rollouts -f \
+  https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml
+
+Verify the controller is running:
+
+kubectl -n argo-rollouts get pods
+kubectl get crd | grep rollouts
+
+---
+
+2) Install the kubectl-argo-rollouts plugin (macOS)
+
+brew install argoproj/tap/kubectl-argo-rollouts
+
+---
+
+kubectl argo rollouts dashboard
+# opens UI at http://localhost:3100
+
+
+=======
+
+kubectl apply -f aws-rollout.yaml
+
+verify the status in localhost page..
+
+Verify the status..
+kubectl argo rollouts get rollout demo-rollout --watch
+
+
+update the nginx to new version...
+kubectl argo rollouts set image demo-rollout demo=nginx:1.25.2
+
+
+Promote early : kubectl argo rollouts promote demo-rollout
+
+rollback manually : kubectl argo rollouts abort demo-rollout
+
+
+
+=======
+
+Progressive Delivery : It enables gradually rolling out updates to a progressively larger subset of users, limiting the potential negative impact if something goes wrong.
+
+Update Strategies: It provides advanced update strategies like blue-green and canary deployments, integrating with service meshes and ingress controllers to safely shift traffic.
+
+Automated Analysis and Rollback: Argo Rollouts queries metric providers to perform analysis on updates. Based on these metrics, it can automatically promote a rollout to a new version or roll back to a stable version if issues are detected.
+
+Custom Resources:
+Rollout Custom Resource: A drop-in replacement for a Kubernetes Deployment, offering blue-green and canary strategies, and managing traffic shaping.
+
+Analysis Custom Resource: Defines how to perform analysis, including metrics to measure, when to measure them, and how to interpret the results (2:16-2:32).
+
+Demo of Argo Rollouts in Action:
+The demo showcases a canary strategy with Istio traffic routing.
+
+Initial State (2:53): The application is running revision 1 (blue version), with 100% of traffic directed to the stable version.
+
+Update Process (4:38): The image is changed to a yellow version. The controller spins up the new version, initially directing 10% of traffic to the canary (yellow) version and pausing indefinitely.
+
+Metric Analysis (5:32): An analysis run is initiated, using Prometheus to query the success rate (non-500 requests / total requests) at 20-second intervals. If the success rate drops below 90%, the analysis fails (5:50-6:24).
+
+Rollback on Error (6:52): Errors are injected into the yellow backend. The next measurement detects a success rate below 90%, causing the analysis to fail, the new replica set to scale down, and the rollout to degrade, automatically rolling back to the stable blue version (6:52-8:14).
+
+Key Integrations:
+Argo Rollouts integrates with various common service meshes and ingress controllers (8:22-8:30), although their use is optional for canary and blue-green updates (8:30-8:38). It also integrates with common metric providers and allows for custom metric providers or Kubernetes jobs for analysis (8:41-8:55).
+
+

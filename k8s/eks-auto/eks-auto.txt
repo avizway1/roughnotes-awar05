@@ -1,0 +1,28 @@
+
+
+eksctl create cluster -f cluster-config.yaml
+
+aws eks update-kubeconfig --region ap-south-1 --name web-quickstart
+
+kubectl apply -f ingressclass.yaml
+
+kubectl create namespace game-2048 --save-config
+
+kubectl apply -n game-2048 -f 2048_full.yaml
+
+
+kubectl get ingress -n game-2048
+
+======
+
+
+kubectl apply -f storage-class.yaml
+
+kubectl apply -f ebs-pvc.yaml
+
+kubectl apply -f ebs-deployment.yaml
+
+
+
+
+
