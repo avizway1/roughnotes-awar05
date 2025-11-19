@@ -813,20 +813,3 @@ kubectl exec -n default -it curl-naked-2 -- \
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

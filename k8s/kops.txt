@@ -1,0 +1,79 @@
+Install KOPS / kOps : https://kops.sigs.k8s.io/getting_started/install/
+
+1. Install and configure "AWS CLI", "kubectl"
+2. Create an s3 bucket for KOPS State store, Export as env varibale.
+
+export KOPS_STATE_STORE=s3://aviz-bucket 
+
+verify the cluster status.. "kops get clusters"
+
+3. Create the cluster
+
+kops create cluster --name=demo.awswithavinashreddy.com --state=$KOPS_STATE_STORE --zones=ap-south-1a,ap-south-1b --node-count=2 --node-size=t3.small --control-plane-size=t3.small --dns-zone=awswithavinashreddy.com
+
+
+ * list clusters with: kops get cluster
+ * edit this cluster with: kops edit cluster demo.learnaws.today
+ * edit your node instance group: kops edit ig --name=demo.learnaws.today nodes-ap-south-1a
+ * edit your control-plane instance group: kops edit ig --name=demo.learnaws.today control-plane-ap-south-1a
+ 
+ 
+kops update cluster --name=demo.awswithavinashreddy.com --state=$KOPS_STATE_STORE --yes
+
+kops validate cluster --wait 10m
+ 
+kops export kubecfg --name=demo.awswithavinashreddy.com --admin
+
+kubectl config use-context demo.awswithavinashreddy.com
+
+kops validate cluster --state=$KOPS_STATE_STORE --name=demo.awswithavinashreddy.com
+
+kubectl cluster-info
+
+=====
+
+Create and access Dashboard
+
+====
+
+. Install the Dashboard
+Apply the recommended manifests:
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+
+This creates the Dashboard deployment in the kubernetes-dashboard namespace.
+
+2. Create an Admin User
+
+To log in, you need a ServiceAccount with cluster-admin rights.
+
+kubectl create serviceaccount admin-user -n kubernetes-dashboard
+
+kubectl create clusterrolebinding admin-user \
+  --clusterrole=cluster-admin \
+  --serviceaccount=kubernetes-dashboard:admin-user
+  
+3. Get the Login Token. Generate a token for the admin-user ServiceAccount:
+
+kubectl -n kubernetes-dashboard create token admin-user
+
+You’ll see a long JWT string — copy this, it will be used to log in.
+
+4. Access the Dashboard
+
+Secure Local Proxy (Recommended)
+
+kubectl proxy
+
+Now open this URL in your browser:
+
+👉 http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+
+Paste the token from step 3 when prompted.
+
+
+===
+
+kops delete cluster --name demo.awswithavinashreddy.com --state $KOPS_STATE_STORE --yes
+kops delete cluster --name demo.awswithavinashreddy.com --state $KOPS_STATE_STORE --yes
+

@@ -1,0 +1,53 @@
+uname -m 
+sudo dnf update -y
+sudo dnf install docker -y
+sudo systemctl enable docker
+sudo systemctl start docker
+sudo usermod -aG docker ec2-user
+
+install kubectl:
+curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
+
+chmod +x kubectl
+sudo mv kubectl /usr/local/bin/
+
+kubectl version --client
+
+install minikube:
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+
+minikube version
+minikube start --driver=docker
+minikube start --nodes=3 --driver=docker
+minikube start --memory=1024 --cpus=2
+minikube stop
+minikube delete
+minikube delete
+
+minikube ssh
+
+kubectl cluster-info
+
+minikube addons enable metrics-server
+minikube dashboard --url					--> grab the URL and note the port number
+
+
+kubectl create deployment nginx --image=nginx
+kubectl expose deployment nginx --port=80 --type=NodePort
+
+
+#If you are using your laptop:
+minikube service nginx --url
+
+#If you are using ec2 instance for minikube
+ssh -i aws.pem -L 32199:127.0.0.1:32199 ec2-user@13.200.39.132
+ssh -i aws.pem -L 41187:127.0.0.1:41187 ec2-user@13.200.39.132
+
+minikube start --nodes=3 (1 control plane, 2 worker nodes)
+
+
+
+
+
+
+
