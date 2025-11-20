@@ -578,10 +578,7 @@ path : /dev/nvme1n1		--> 1 gb volume
 
 mkdir newvol/
 
-
 mkfs -t xfs /dev/nvme1n1
-
-
 
 mount /dev/nvme1n1 newvol/
 
