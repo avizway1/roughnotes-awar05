@@ -24,6 +24,10 @@ minikube stop
 minikube delete
 minikube delete
 
+
+
+
+
 minikube ssh
 
 kubectl cluster-info

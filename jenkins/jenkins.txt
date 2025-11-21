@@ -1,0 +1,156 @@
+CICD Tool : 
+
+Continuous Integration (CI) 
+Continuous Deployment / Delivery (CD)
+
+Delivery : Manaul step or action involved in the process
+Deploy : NO manaul step or action involved in the process
+
+
+2004 --> Kohsuke Kawaguchi he developed "hudson" as open source for sun-micro system.
+2010 --> Got disputes between hudson and oracle (oracle acquired sun-micro) --> They folder existing and named as jenkins
+
+Jenkins has very good community support and rich in plugins.. 
+
+---
+
+Jenkins has a pre-requisite: We should have java installed..
+
+Jenkins runs on port 8080
+
+
+sudo wget -O /etc/yum.repos.d/jenkins.repo \
+    https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+sudo yum upgrade
+dnf install fontconfig -y
+
+dnf install java-21-amazon-corretto -y
+
+dnf install jenkins -y
+
+systemctl enable jenkins --now
+
+systemctl start jenkins
+systemctl enable jenkins
+
+===
+
+Job / Item / Pipeline : 
+
+Environment Variables: 
+
+NAME=Avinash
+echo "hello $NAME"		--> hello Avinash
+
+
+Local variable : We can define variables inside the pipeline.. It is limited this particular item.
+
+NAME=Avinash
+COURSE=Jenkins
+echo "Hello, THis is $NAME Welcome to mastering ${COURSE}"
+
+---
+
+System variable : We can define variables at Jenkins system settings.. It can be used in any of the item..
+PROJECT = DevOpsproject
+OWNER = Avinash
+
+PROJECT=JenkinsProject
+echo "hello this is for a $PROJECT and this is maintained by $OWNER"
+
+What is i overwrite a system variable with local variable.?? 
+Local variables takes affect..
+
+---
+jenkins Variable : http://13.201.177.117:8080/env-vars.html/
+
+echo "THis is a test pipeline and this build id is: $BUILD_NUMBER , THis is running in $NODE_NAME"
+
+===
+
+Build options in Jenkins:
+
+Build Periodically : Regardless of the changes happening on git, pipelene triggers periodically.
+
+Poll SCM : Peridically, based on given time it will check for code changes, during the period, if any changes occured, it will trigger the pipeline.. 
+
+GitHub hook trigger for GITScm polling : THis helps to trigger the pipeline based on commits happening on the repo.. No periodical checks..
+
+http://13.201.177.117:8080/github-webhook/
+
+
+====
+
+
+Build throttle : COnfigure buiil throttle to control
+
+Then, offload the work to newly launched ec2 instance..
+
+1. Create a directory in new Node (under "var" directory) and add permisisons (chmod 777 remotedir) use at "remote roor directory".. 
+
+2. Install "java" and "git" in node..
+
+3. while adding a new node.. Add label "dev-node" "uat-name".. usage "build that match label expression".. 
+launch via ssh --> add cred --> SSH --> GLobal --> "ec2-user" and Privatekey and add keyapir
+Not verifying host strategy..
+
+4. Now try to create or trigger an existing job and verify where its running..
+
+5. Create a new item and choode "restrict where this can run" add dev-label and test it.. 
+
+----
+
+UserManagement in Jenkins : 
+
+
+Create a user and verify the user settings.. He can do anything..
+--> Reason : under security.. "logged in user can do anything "".. 
+test "allow anonomus access"..
+test "keep me signedin".. "register"..
+
+matrix:
+Tryout.. Matrix based security.. whatever user we are adding, he should have overall read permissions""
+add user "xyz" -->  
+add user "anudeep" (should already created) --> dont give delete on joba, but give all other permisisons..
+
+
+Now, create 4 projects i.e; dev-proj1 dev-proj2, uat-proj1 and uat-proj2.. we cant achieve this using "matrix"
+
+anudeep --> devprojects
+aravind --> uatprojects
+
+to chieve this, install plugins "Role base wuthrorisation starategy"
+
+now, navigate to security.. enable "role based auth strategy"..  then we get new option under security "manage and assign role"
+
+now, create a "overall read role".. without it we cant do anything.. 
+under "manage roles" --> "read-mandatory" --> choose "overall read"
+
+naviagte to "assign roles".. "global roles"  --> add user "anudeep" --> assign "read mandatory"
+and add "aravind" user and --> assign "read mandatory"
+
+login as these users and verify nothing available.. 
+
+Now.. GO to "manage roles" --> "item roles" -->  role to add "dev-role" --> pattern "dev.*" --> then choose the permisisons.. 
+GO to "manage roles" --> "item roles" -->  role to add "uat-role" --> pattern "dev.*" --> then choose the permisisons.. 
+
+Now, navigate to "assign roles".. add user .. then user "item role" assign users with appropriate .. and test.. 
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
