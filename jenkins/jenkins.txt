@@ -139,11 +139,194 @@ Now, navigate to "assign roles".. add user .. then user "item role" assign users
 
 ---
 
+Maven Instalaltion : 
+
+dnf install java-21-amazon-corretto -y
+
+https://maven.apache.org/download.cgi
+
+tar -xvf apache-maven-3.9.11-bin.tar.gz
+sudo mv apache-maven-3.9.11 /opt/
+export M2_HOME=/opt/apache-maven-3.9.11
+export PATH=$M2_HOME/bin:$PATH
+source ~/.bashrc
+
+
+mvn archetype:generate
+
+groupid : mydemo proj
+artifact: avinash
+package : mydemo
+
+---
+
+.
+└── javasample
+    ├── pom.xml
+    └── src
+        ├── main
+        │   └── java
+        │       └── mydemoproject
+        │           └── App.java
+        └── test
+            └── java
+                └── mydemoproject
+                    └── AppTest.java
+----
+
+├── pom.xml
+├── src
+│   ├── main
+│   │   └── java
+│   │       └── mydemoproject
+│   │           └── App.java
+│   └── test
+│       └── java
+│           └── mydemoproject
+│               └── AppTest.java
+└── target
+    ├── classes
+    │   └── mydemoproject
+    │       └── App.class
+    ├── generated-sources
+    │   └── annotations
+    └── maven-status
+        └── maven-compiler-plugin
+            └── compile
+                └── default-compile
+                    ├── createdFiles.lst
+                    └── inputFiles.lst
+
+---
+mvn package : Building jar: /home/ec2-user/javasample/target/javasample-1.0-SNAPSHOT.jar
+
+.
+├── pom.xml
+├── src
+│   ├── main
+│   │   └── java
+│   │       └── mydemoproject
+│   │           └── App.java
+│   └── test
+│       └── java
+│           └── mydemoproject
+│               └── AppTest.java
+└── target
+    ├── classes
+    │   └── mydemoproject
+    │       └── App.class
+    ├── generated-sources
+    │   └── annotations
+    ├── generated-test-sources
+    │   └── test-annotations
+    ├── javasample-1.0-SNAPSHOT.jar
+    ├── maven-archiver
+    │   └── pom.properties
+    ├── maven-status
+    │   └── maven-compiler-plugin
+    │       ├── compile
+    │       │   └── default-compile
+    │       │       ├── createdFiles.lst
+    │       │       └── inputFiles.lst
+    │       └── testCompile
+    │           └── default-testCompile
+    │               ├── createdFiles.lst
+    │               └── inputFiles.lst
+    ├── surefire-reports
+    │   ├── TEST-mydemoproject.AppTest.xml
+    │   └── mydemoproject.AppTest.txt
+    └── test-classes
+        └── mydemoproject
+            └── AppTest.class
+
+---
+
+mvn install : 
+
+Installing /home/ec2-user/javasample/pom.xml to /root/.m2/repository/mydemoproject/javasample/1.0-SNAPSHOT/javasample-1.0-SNAPSHOT.pom
+[INFO] Installing /home/ec2-user/javasample/target/javasample-1.0-SNAPSHOT.jar to /root/.m2/repository/mydemoproject/javasample/1.0-SNAPSHOT/javasample-1.0-SNAPSHOT.jar
 
 
 
+======
 
 
+
+downlaod and unzip the apache: 
+
+Navigate /opt and download tomcat
+
+10.1.30 and tar.gz
+
+tar -zvxf 
+ 
+Bin will have scripts.. version.sh 
+Start startup.sh to start
+
+
+
+====
+
+To perform start and stop, aleays need to navigate to bin and do it, but we can rlimanate it
+Create a softlink
+
+
+ln -s /opt/apache-tomcat-10.1.44/bin/startup.sh /usr/bin/tomcatstart
+ln -s /opt/apache-tomcat-10.1.44/bin/shutdown.sh /usr/bin/tomcatstop
+
+---
+
+Somepages are accesaable as tomcat configured to work only on that machine. Need to adjust settings
+
+find / -name context.cml
+
+and edit "manager" and "host-manager" files
+
+
+vim /opt/apache-tomcat-10.1.49/webapps/host-manager/META-INF/context.xml
+vim /opt/apache-tomcat-10.1.49/webapps/manager/META-INF/context.xml
+
+---
+
+Create a user at “conf/tomcat-users.xml” 
+
+====
+
+Copy roles, manager-gui till manager-status
+
+===
+ Try access now, should prompt login
+
+Prepare role file, then paste in conf/users.xml
+
+Under user section, paste it
+
+=== 
+
+Now we can access server status and everything 
+
+====
+
+To change port, edit “server.xml” 
+Connector port, change, if req
+
+---
+
+
+vim /opt/apache-tomcat-10.1.44/conf/tomcat-users.xml
+
+tomcat
+s3cret
+
+
+--
+
+<role rolename="manager-gui"/>
+<role rolename="manager-script"/>
+<role rolename="manager-jmx"/>
+<role rolename="manager-status"/>
+<role rolename="admin-gui"/>
+<user username="tomcat" password="Avinash" roles="manager-gui,manager-script,manager-jmx,manager-status,admin-gui"/>
 
 
 
