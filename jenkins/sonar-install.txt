@@ -1,0 +1,107 @@
+Installing SonarQube on Amazon Linux 2023 involves several steps, including preparing the system, installing prerequisites, setting up the database, and configuring SonarQube itself. 
+1. Prepare the Amazon Linux 2023 EC2 Instance: 
+
+• Launch an EC2 Instance: Create an Amazon Linux 2023 EC2 instance of a suitable type (e.g., t3.medium or larger) with sufficient resources for SonarQube and its database. 
+• Connect to the Instance: SSH into your EC2 instance. 
+• Update the System: 
+
+    sudo dnf update -y
+
+• Install Java: SonarQube requires a specific Java version (e.g., OpenJDK 17 for recent SonarQube versions). 
+
+    sudo dnf install -y java-17-amazon-corretto-devel
+
+• Adjust System Limits: Configure system limits for file descriptors and memory. 
+
+sudo tee -a /etc/sysctl.conf <<EOF
+vm.max_map_count=262144
+fs.file-max=65536
+EOF
+
+sudo sysctl -p
+
+sudo tee -a /etc/security/limits.conf <<EOF
+sonar   -       nofile  65536
+sonar   -       nproc   4096
+EOF
+
+2. Set up the Database (PostgreSQL is recommended): 
+Install PostgreSQL. 
+
+sudo dnf install -y postgresql-server postgresql-contrib
+
+Initialize and Start PostgreSQL. 
+    sudo postgresql-setup --initdb
+    sudo systemctl enable postgresql
+    sudo systemctl start postgresql
+
+Create SonarQube Database and User. 
+    sudo -i -u postgres psql -c "CREATE USER sonar WITH PASSWORD 'your_password';"
+    sudo -i -u postgres psql -c "CREATE DATABASE sonarqube OWNER sonar;"
+
+(Replace 'your\_password' with a strong password.) 
+3. Install SonarQube: 
+
+• Download SonarQube: Download the latest LTS version of SonarQube from the official SonarQube website. 
+
+    sudo wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-X.Y.Z.zip -P /opt
+
+(Replace X.Y.Z with the actual version number.) Unzip SonarQube. 
+    sudo unzip /opt/sonarqube-X.Y.Z.zip -d /opt
+    sudo mv /opt/sonarqube-X.Y.Z /opt/sonarqube
+
+Create Sonar User. 
+    sudo useradd sonar
+    sudo chown -R sonar:sonar /opt/sonarqube
+
+4. Configure SonarQube: 
+
+• Edit sonar.properties: Open the SonarQube configuration file. 
+
+    sudo vi /opt/sonarqube/conf/sonar.properties
+
+• Configure Database Connection: Uncomment and modify the PostgreSQL database settings. 
+
+    sonar.jdbc.url=jdbc:postgresql://localhost/sonarqube
+    sonar.jdbc.username=sonar
+    sonar.jdbc.password=your_password
+
+(Ensure 'your\_password' matches the one set for the PostgreSQL user.) 
+
+• Configure Web Server Settings (Optional): You might want to adjust the web host and port. 
+
+    sonar.web.host=0.0.0.0
+    sonar.web.port=9000
+
+5. Create a Systemd Service for SonarQube: 
+Create Service File. 
+    sudo vi /etc/systemd/system/sonarqube.service
+
+Add Service Configuration. 
+    [Unit]
+    Description=SonarQube service
+    After=syslog.target network.target
+
+    [Service]
+    Type=forking
+    ExecStart=/opt/sonarqube/bin/linux-x86-64/sonar.sh start
+    ExecStop=/opt/sonarqube/bin/linux-x86-64/sonar.sh stop
+    User=sonar
+    Group=sonar
+    Restart=always
+
+    [Install]
+    WantedBy=multi-user.target
+
+Reload Systemd and Start SonarQube. 
+    sudo systemctl daemon-reload
+    sudo systemctl enable sonarqube
+    sudo systemctl start sonarqube
+
+Check Status. 
+    sudo systemctl status sonarqube
+
+6. Access SonarQube: 
+
+• Open your web browser and navigate to http://&lt;YourEC2PublicIP&gt;:9000. 
+• Log in with the default credentials: admin/admin. You will be prompted to change the password on the first login.
