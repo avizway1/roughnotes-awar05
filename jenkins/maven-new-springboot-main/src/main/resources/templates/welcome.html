@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jenkins CI/CD Project by Avinash Reddy</title>
+
+    <link rel="stylesheet" th:href="@{webjars/bootstrap/4.2.1/css/bootstrap.min.css}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+    <link rel="icon" th:href="@{/images/favicon.svg}" type="image/svg+xml">
+</head>
+
+<body>
+
+<nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center" th:href="@{/}">
+            <img th:src="@{/images/Jenkins-logo.png}" src="/images/Jenkins-logo.png" alt="Logo" class="brand-logo mr-2" onerror="this.onerror=null;this.src='/images/jenkins-logo.png'"/>
+            <span class="brand-title">Jenkins CI/CD</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault"
+                aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#about">About</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main role="main" class="site-main">
+    <header class="hero text-center">
+        <div class="container">
+            <div class="hero-card shadow-sm">
+                <img th:src="@{/images/Jenkins-logo.png}" src="/images/Jenkins-logo.png" alt="Jenkins Logo" class="hero-logo mb-3" onerror="this.onerror=null;this.src='/images/jenkins-logo.png'"/>
+                <h1 class="hero-title">Jenkins CI/CD Project</h1>
+                <p class="hero-subtitle">Powered by AWS | Built and deployed with Jenkins</p>
+                <h2 class="mt-3"><span th:text="'Hello, ' + ${message}"></span></h2>
+                <p class="mt-3">
+                    <a class="btn btn-primary btn-lg" href="#" role="button">View Pipeline</a>
+                </p>
+                <p class="mt-2">
+                    <a class="btn btn-outline-secondary btn-sm" th:href="@{/actuator/health}" href="/actuator/health" role="button">App Status</a>
+                    <a class="btn btn-outline-secondary btn-sm ml-2" th:href="@{/actuator/info}" href="/actuator/info" role="button">Info</a>
+                </p>
+            </div>
+        </div>
+    </header>
+
+    <section id="about" class="features py-5">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-6 text-center mb-4">
+                    <img th:src="@{/images/aws-logo.png}" src="/images/aws-logo.png" alt="AWS Logo" class="feature-logo mb-2" onerror="this.onerror=null;this.src='/images/aws-logo.png'"/>
+                    <h3>Cloud-ready</h3>
+                    <p class="text-muted">Designed for cloud deployments and easy CI/CD integration.</p>
+                </div>
+                <div class="col-md-6 text-center mb-4">
+                    <img th:src="@{/images/Jenkins-logo.png}" src="/images/Jenkins-logo.png" alt="Jenkins Logo" class="feature-logo mb-2" onerror="this.onerror=null;this.src='/images/jenkins-logo.png'"/>
+                    <h3>Automated Delivery</h3>
+                    <p class="text-muted">Continuous integration and deployment using Jenkins pipelines.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="site-footer bg-white border-top">
+    <div class="container text-center py-3">
+        <small>&copy; <span th:text="${#dates.format(new java.util.Date(), 'yyyy')}"></span> Avinash Reddy | Jenkins on AWS</small>
+        <div class="mt-2">
+            <a class="text-muted mr-3" th:href="@{/contact}">Contact</a>
+            <a class="text-muted" th:href="@{/docs}">Docs</a>
+        </div>
+    </div>
+</footer>
+
+<script type="text/javascript" th:src="@{webjars/bootstrap/4.2.1/js/bootstrap.min.js}"></script>
+</body>
+</html>

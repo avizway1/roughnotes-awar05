@@ -248,6 +248,8 @@ Installing /home/ec2-user/javasample/pom.xml to /root/.m2/repository/mydemoproje
 
 
 
+mvn clean install package
+
 ======
 
 
@@ -329,7 +331,12 @@ s3cret
 <user username="tomcat" password="Avinash" roles="manager-gui,manager-script,manager-jmx,manager-status,admin-gui"/>
 
 
+---
 
+Install "maven" and "deploy to container" plugs.. 
+Create a credentials for connecting to apache server using same user we created in "apache".. (un: tomcat, pwd: s3cret)
+Now, Copy all your code to git repo.. 
+ 
 
 
 

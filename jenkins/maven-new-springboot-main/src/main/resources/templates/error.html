@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Not Found</title>
+    <link rel="stylesheet" th:href="@{webjars/bootstrap/4.2.1/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+<main class="container text-center" style="padding:4rem 1rem;">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h1 class="display-5">Page Not Found</h1>
+            <p class="lead text-muted">The page you requested was not found (404).</p>
+            <p>If you were trying to reach the application root, use the application context path.</p>
+            <p>
+                <a th:href="@{/}" class="btn btn-primary">Go to Home</a>
+                <a th:href="@{/actuator/health}" class="btn btn-outline-secondary ml-2">Check Health</a>
+            </p>
+            <hr/>
+            <small class="text-muted">If this error appears after deployment to Tomcat, confirm the app context path (WAR name) and use that prefix in the URL.</small>
+        </div>
+    </div>
+</main>
+</body>
+</html>
