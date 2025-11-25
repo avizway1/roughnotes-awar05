@@ -338,6 +338,44 @@ Create a credentials for connecting to apache server using same user we created 
 Now, Copy all your code to git repo.. 
  
 
+----
+
+SonarQube : Its is a code quality and security analysis tool. It supports approx 30+ programing languages.. 
+We can detect security issues presented in our application code.
+
+--> Bugs
+--> Security vulnerabilities
+--> code smells (Bad coding Practices)
+--> Duplicate code
+--> test coverage issues
+
+--> Code Quality standards 
+--> Quality Gates : Set of rules we can define on our coide
+Code Coverage >80%
+No critical bugs
+No vulnerabilities
+
+
+Project : Analysis : maven --> Sonar scanner --> send results --> Sonarqube UI
+
+
+https://docs.sonarsource.com/sonarqube-server/server-installation/server-components-overview
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

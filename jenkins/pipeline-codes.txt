@@ -72,7 +72,7 @@ pipeline {
     }
 
     environment {
-        TOMCAT_HOST = '65.1.1.45'
+        TOMCAT_HOST = '65.2.182.107'
         TOMCAT_PORT = '8080'
         APP_CONTEXT = '/Springdemo-0.0.1-SNAPSHOT'
     }
@@ -191,7 +191,7 @@ pipeline {
         APP_CONTEXT = '/Springdemo-0.0.1-SNAPSHOT'
 
         // SonarQube details
-        SONAR_HOST_URL     = 'http://172.31.6.188:9000'
+        SONAR_HOST_URL     = 'http://13.203.29.187:9000/'
         SONAR_PROJECT_KEY  = 'myprodcode'
         SONAR_PROJECT_NAME = 'prod-app-code'
     }
@@ -222,7 +222,7 @@ pipeline {
         stage('sonar-analysis') {
             steps {
                 withCredentials([
-                    string(credentialsId: 'sonartoken', variable: 'SONAR_TOKEN')
+                    string(credentialsId: 'sonar', variable: 'SONAR_TOKEN')
                 ]) {
                     sh '''
                         echo "Running SonarQube analysis..."
@@ -354,7 +354,7 @@ pipeline {
 
         stage('sonar-analysis') {
             steps {
-                // SonarQube server name: "sonarqube" (configured in Jenkins global settings)
+                // SonarQube server name: "sonar" (configured in Jenkins global settings)
                 withSonarQubeEnv('sonarqube') {
                     withCredentials([
                         string(credentialsId: 'sonartoken', variable: 'SONAR_TOKEN')

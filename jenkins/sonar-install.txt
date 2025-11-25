@@ -33,6 +33,39 @@ sudo -u postgres psql -c "CREATE USER sonar WITH PASSWORD 'StrongPassw0rd';"
 sudo -u postgres psql -c "CREATE DATABASE sonarqube OWNER sonar;"
 
 
+
+---
+
+cp /var/lib/pgsql/data/pg_hba.conf /var/lib/pgsql/data/pg_hba.conf.bak
+
+vim /var/lib/pgsql/data/pg_hba.conf
+
+---
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+
+# "local" is for Unix domain socket connections only
+local   all             all                                     md5
+
+# IPv4 local connections:
+host    all             all             127.0.0.1/32            md5
+
+# IPv6 local connections:
+host    all             all             ::1/128                 md5
+
+# Allow replication connections from localhost, by a user with the
+# replication privilege.
+local   replication     all                                     md5
+host    replication     all             127.0.0.1/32            md5
+host    replication     all             ::1/128                 md5
+
+
+---
+
+systemctl restart postgresql
+systemctl status postgresql
+
+--
+
 #verify DB connectivity
 psql -h 127.0.0.1 -U sonar -d sonarqube -W
 
@@ -93,35 +126,6 @@ systemctl daemon-reload
 systemctl enable --now sonarqube
 systemctl status sonarqube
 
----
-
-cp /var/lib/pgsql/data/pg_hba.conf /var/lib/pgsql/data/pg_hba.conf.bak
-
-vim /var/lib/pgsql/data/pg_hba.conf
-
----
-# TYPE  DATABASE        USER            ADDRESS                 METHOD
-
-# "local" is for Unix domain socket connections only
-local   all             all                                     md5
-
-# IPv4 local connections:
-host    all             all             127.0.0.1/32            md5
-
-# IPv6 local connections:
-host    all             all             ::1/128                 md5
-
-# Allow replication connections from localhost, by a user with the
-# replication privilege.
-local   replication     all                                     md5
-host    replication     all             127.0.0.1/32            md5
-host    replication     all             ::1/128                 md5
-
----
-
-systemctl restart postgresql
-systemctl status postgresql
-
 
 ---
 
@@ -143,7 +147,7 @@ Install/Configure "nexus" credentials :
 Name: nexus-creds
 
 
-
+Avinash12345!
 
 
 
