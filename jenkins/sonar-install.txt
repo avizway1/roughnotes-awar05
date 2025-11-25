@@ -1,107 +1,159 @@
-Installing SonarQube on Amazon Linux 2023 involves several steps, including preparing the system, installing prerequisites, setting up the database, and configuring SonarQube itself. 
-1. Prepare the Amazon Linux 2023 EC2 Instance: 
+sudo dnf update -y
 
-• Launch an EC2 Instance: Create an Amazon Linux 2023 EC2 instance of a suitable type (e.g., t3.medium or larger) with sufficient resources for SonarQube and its database. 
-• Connect to the Instance: SSH into your EC2 instance. 
-• Update the System: 
+sudo dnf install -y \
+  java-17-amazon-corretto-devel \
+  wget \
+  unzip
 
-    sudo dnf update -y
 
-• Install Java: SonarQube requires a specific Java version (e.g., OpenJDK 17 for recent SonarQube versions). 
+dnf install -y postgresql15 postgresql15-server
+/usr/bin/postgresql-setup --initdb
+systemctl enable --now postgresql
+systemctl status postgresql
 
-    sudo dnf install -y java-17-amazon-corretto-devel
 
-• Adjust System Limits: Configure system limits for file descriptors and memory. 
+# Kernel params for Elasticsearch
 
-sudo tee -a /etc/sysctl.conf <<EOF
+cat <<EOF >> /etc/sysctl.d/99-sonarqube.conf
 vm.max_map_count=262144
 fs.file-max=65536
 EOF
 
-sudo sysctl -p
+sysctl --system
 
-sudo tee -a /etc/security/limits.conf <<EOF
-sonar   -       nofile  65536
-sonar   -       nproc   4096
+# File descriptor and process limits for sonar user
+cat <<EOF >> /etc/security/limits.conf
+sonar   -   nofile  65536
+sonar   -   nproc   4096
 EOF
 
-2. Set up the Database (PostgreSQL is recommended): 
-Install PostgreSQL. 
 
-sudo dnf install -y postgresql-server postgresql-contrib
+# Replace StrongPassw0rd! with your own strong password
+sudo -u postgres psql -c "CREATE USER sonar WITH PASSWORD 'StrongPassw0rd';"
+sudo -u postgres psql -c "CREATE DATABASE sonarqube OWNER sonar;"
 
-Initialize and Start PostgreSQL. 
-    sudo postgresql-setup --initdb
-    sudo systemctl enable postgresql
-    sudo systemctl start postgresql
 
-Create SonarQube Database and User. 
-    sudo -i -u postgres psql -c "CREATE USER sonar WITH PASSWORD 'your_password';"
-    sudo -i -u postgres psql -c "CREATE DATABASE sonarqube OWNER sonar;"
+#verify DB connectivity
+psql -h 127.0.0.1 -U sonar -d sonarqube -W
 
-(Replace 'your\_password' with a strong password.) 
-3. Install SonarQube: 
+--
 
-• Download SonarQube: Download the latest LTS version of SonarQube from the official SonarQube website. 
+cd /opt
 
-    sudo wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-X.Y.Z.zip -P /opt
+# Download SonarQube
+wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-25.11.0.114957.zip
 
-(Replace X.Y.Z with the actual version number.) Unzip SonarQube. 
-    sudo unzip /opt/sonarqube-X.Y.Z.zip -d /opt
-    sudo mv /opt/sonarqube-X.Y.Z /opt/sonarqube
+# Unzip and rename
+unzip sonarqube-25.11.0.114957.zip
+mv sonarqube-25.11.0.114957 sonarqube
 
-Create Sonar User. 
-    sudo useradd sonar
-    sudo chown -R sonar:sonar /opt/sonarqube
+# Create dedicated user and set ownership
+useradd -r -s /bin/false sonar
+chown -R sonar:sonar /opt/sonarqube
 
-4. Configure SonarQube: 
 
-• Edit sonar.properties: Open the SonarQube configuration file. 
+vim /opt/sonarqube/conf/sonar.properties
 
-    sudo vi /opt/sonarqube/conf/sonar.properties
+---
+# Database config
+sonar.jdbc.url=jdbc:postgresql://localhost/sonarqube
+sonar.jdbc.username=sonar
+sonar.jdbc.password=StrongPassw0rd
 
-• Configure Database Connection: Uncomment and modify the PostgreSQL database settings. 
+# Listen on all interfaces (optional but useful on EC2)
+sonar.web.host=0.0.0.0
+sonar.web.port=9000
+---
 
-    sonar.jdbc.url=jdbc:postgresql://localhost/sonarqube
-    sonar.jdbc.username=sonar
-    sonar.jdbc.password=your_password
+#Systemd Service for SonarQube
 
-(Ensure 'your\_password' matches the one set for the PostgreSQL user.) 
+cat <<'EOF' > /etc/systemd/system/sonarqube.service
+[Unit]
+Description=SonarQube service
+After=network.target postgresql.service
 
-• Configure Web Server Settings (Optional): You might want to adjust the web host and port. 
+[Service]
+Type=forking
+User=sonar
+Group=sonar
+ExecStart=/opt/sonarqube/bin/linux-x86-64/sonar.sh start
+ExecStop=/opt/sonarqube/bin/linux-x86-64/sonar.sh stop
+Restart=on-failure
+LimitNOFILE=65536
+LimitNPROC=4096
 
-    sonar.web.host=0.0.0.0
-    sonar.web.port=9000
+[Install]
+WantedBy=multi-user.target
+EOF
 
-5. Create a Systemd Service for SonarQube: 
-Create Service File. 
-    sudo vi /etc/systemd/system/sonarqube.service
 
-Add Service Configuration. 
-    [Unit]
-    Description=SonarQube service
-    After=syslog.target network.target
+---
 
-    [Service]
-    Type=forking
-    ExecStart=/opt/sonarqube/bin/linux-x86-64/sonar.sh start
-    ExecStop=/opt/sonarqube/bin/linux-x86-64/sonar.sh stop
-    User=sonar
-    Group=sonar
-    Restart=always
+systemctl daemon-reload
+systemctl enable --now sonarqube
+systemctl status sonarqube
 
-    [Install]
-    WantedBy=multi-user.target
+---
 
-Reload Systemd and Start SonarQube. 
-    sudo systemctl daemon-reload
-    sudo systemctl enable sonarqube
-    sudo systemctl start sonarqube
+cp /var/lib/pgsql/data/pg_hba.conf /var/lib/pgsql/data/pg_hba.conf.bak
 
-Check Status. 
-    sudo systemctl status sonarqube
+vim /var/lib/pgsql/data/pg_hba.conf
 
-6. Access SonarQube: 
+---
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
 
-• Open your web browser and navigate to http://&lt;YourEC2PublicIP&gt;:9000. 
-• Log in with the default credentials: admin/admin. You will be prompted to change the password on the first login.
+# "local" is for Unix domain socket connections only
+local   all             all                                     md5
+
+# IPv4 local connections:
+host    all             all             127.0.0.1/32            md5
+
+# IPv6 local connections:
+host    all             all             ::1/128                 md5
+
+# Allow replication connections from localhost, by a user with the
+# replication privilege.
+local   replication     all                                     md5
+host    replication     all             127.0.0.1/32            md5
+host    replication     all             ::1/128                 md5
+
+---
+
+systemctl restart postgresql
+systemctl status postgresql
+
+
+---
+
+Now, In jenkins install below plugins
+
+SonarQube Scanner
+
+--->
+
+Then, navigate to system systems --> then sonarqube
+
+Enable environment variable
+
+sonarqube	--> http://172.31.6.188:9000	--> name --> 
+
+---
+
+Install/Configure "nexus" credentials : 
+Name: nexus-creds
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

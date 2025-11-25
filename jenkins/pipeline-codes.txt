@@ -1,0 +1,999 @@
+pipeline {
+    agent any
+
+    tools {
+        maven 'maven'
+    }
+
+    environment {
+        TOMCAT_HOST    = '65.1.1.45'
+        TOMCAT_PORT    = '8080'
+        APP_CONTEXT    = '/Springdemo-0.0.1-SNAPSHOT'
+    }
+
+    stages {
+        stage('checkout') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/avizway1/awar05-jenkins.git'
+            }
+        }
+
+        stage('build') {
+            steps {
+                sh '''
+                    echo "Building my code using Maven..."
+                    mvn clean install
+                '''
+            }
+        }
+
+        stage('test') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+
+        stage('deploy-to-tomcat') {
+            steps {
+                // Credentials with ID "tomcat" (Username + Password)
+                withCredentials([usernamePassword(
+                    credentialsId: 'tomcat',
+                    usernameVariable: 'TOMCAT_USER',
+                    passwordVariable: 'TOMCAT_PASS'
+                )]) {
+                    sh '''
+                        echo "Finding WAR file..."
+                        WAR_FILE=$(ls target/*.war | head -n 1)
+                        echo "Deploying $WAR_FILE to Tomcat..."
+
+                        curl --fail -u "$TOMCAT_USER:$TOMCAT_PASS" \
+                          -T "$WAR_FILE" \
+                          "http://$TOMCAT_HOST:$TOMCAT_PORT/manager/text/deploy?path=$APP_CONTEXT&update=true"
+
+                        echo "Deployment triggered. Check Tomcat logs if needed."
+                    '''
+                }
+            }
+        }
+    }
+}
+
+
+==========
+get slack notifications when deployment happened
+==========
+
+pipeline {
+    agent any
+
+    tools {
+        maven 'maven'
+    }
+
+    environment {
+        TOMCAT_HOST = '65.1.1.45'
+        TOMCAT_PORT = '8080'
+        APP_CONTEXT = '/Springdemo-0.0.1-SNAPSHOT'
+    }
+
+    stages {
+        stage('checkout') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/avizway1/awar05-jenkins.git'
+            }
+        }
+
+        stage('build') {
+            steps {
+                sh '''
+                    echo "Building my code using Maven..."
+                    mvn clean install
+                '''
+            }
+        }
+
+        stage('test') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+
+        stage('deploy-to-tomcat') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'tomcat',
+                        usernameVariable: 'TOMCAT_USER',
+                        passwordVariable: 'TOMCAT_PASS'
+                    )
+                ]) {
+                    sh '''
+                        echo "Finding WAR file..."
+                        WAR_FILE=$(ls target/*.war | head -n 1)
+                        echo "Deploying $WAR_FILE to Tomcat..."
+
+                        curl --fail -u "$TOMCAT_USER:$TOMCAT_PASS" \
+                          -T "$WAR_FILE" \
+                          "http://${TOMCAT_HOST}:${TOMCAT_PORT}/manager/text/deploy?path=${APP_CONTEXT}&update=true"
+
+                        echo "Deployment triggered to Tomcat at http://${TOMCAT_HOST}:${TOMCAT_PORT}${APP_CONTEXT}"
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            // Slack notification using Incoming Webhook stored as secret "webhook"
+            withCredentials([
+                string(credentialsId: 'webhook', variable: 'SLACK_WEBHOOK_URL')
+            ]) {
+                sh '''
+                    echo "Sending Slack success notification..."
+
+                    PAYLOAD=$(cat <<EOF
+{
+  "text": "✅ *Deployment SUCCESS*\n• Job: ${JOB_NAME}\n• Build: #${BUILD_NUMBER}\n• App: http://${TOMCAT_HOST}:${TOMCAT_PORT}${APP_CONTEXT}\n• Channel: #webhook-test"
+}
+EOF
+                    )
+
+                    curl -X POST -H 'Content-type: application/json' \
+                         --data "$PAYLOAD" \
+                         "$SLACK_WEBHOOK_URL"
+                '''
+            }
+        }
+
+        failure {
+            // Slack notification on failure
+            withCredentials([
+                string(credentialsId: 'webhook', variable: 'SLACK_WEBHOOK_URL')
+            ]) {
+                sh '''
+                    echo "Sending Slack failure notification..."
+
+                    PAYLOAD=$(cat <<EOF
+{
+  "text": "❌ *Deployment FAILED*\n• Job: ${JOB_NAME}\n• Build: #${BUILD_NUMBER}\n• Console: ${BUILD_URL}\n• Channel: #webhook-test"
+}
+EOF
+                    )
+
+                    curl -X POST -H 'Content-type: application/json' \
+                         --data "$PAYLOAD" \
+                         "$SLACK_WEBHOOK_URL"
+                '''
+            }
+        }
+    }
+}
+
+==========
+Integrate SonarQube with jenkins for Code Quality checks
+==========
+
+
+pipeline {
+    agent any
+
+    tools {
+        maven 'maven'
+    }
+
+    environment {
+        // Tomcat details
+        TOMCAT_HOST = '65.1.1.45'
+        TOMCAT_PORT = '8080'
+        APP_CONTEXT = '/Springdemo-0.0.1-SNAPSHOT'
+
+        // SonarQube details
+        SONAR_HOST_URL     = 'http://172.31.6.188:9000'
+        SONAR_PROJECT_KEY  = 'myprodcode'
+        SONAR_PROJECT_NAME = 'prod-app-code'
+    }
+
+    stages {
+        stage('checkout') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/avizway1/awar05-jenkins.git'
+            }
+        }
+
+        stage('build') {
+            steps {
+                sh '''
+                    echo "Building my code using Maven..."
+                    mvn clean install
+                '''
+            }
+        }
+
+        stage('test') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+
+        stage('sonar-analysis') {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'sonartoken', variable: 'SONAR_TOKEN')
+                ]) {
+                    sh '''
+                        echo "Running SonarQube analysis..."
+
+                        mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+                          -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+                          -Dsonar.projectName=$SONAR_PROJECT_NAME \
+                          -Dsonar.host.url=$SONAR_HOST_URL \
+                          -Dsonar.token=$SONAR_TOKEN
+                    '''
+                }
+            }
+        }
+
+        stage('deploy-to-tomcat') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'tomcat',
+                        usernameVariable: 'TOMCAT_USER',
+                        passwordVariable: 'TOMCAT_PASS'
+                    )
+                ]) {
+                    sh '''
+                        echo "Finding WAR file..."
+                        WAR_FILE=$(ls target/*.war | head -n 1)
+                        echo "Deploying $WAR_FILE to Tomcat..."
+
+                        curl --fail -u "$TOMCAT_USER:$TOMCAT_PASS" \
+                          -T "$WAR_FILE" \
+                          "http://$TOMCAT_HOST:$TOMCAT_PORT/manager/text/deploy?path=$APP_CONTEXT&update=true"
+
+                        echo "Deployment triggered at: http://$TOMCAT_HOST:$TOMCAT_PORT$APP_CONTEXT"
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            withCredentials([
+                string(credentialsId: 'webhook', variable: 'SLACK_WEBHOOK_URL')
+            ]) {
+                sh '''
+                    SONAR_DASHBOARD_URL="${SONAR_HOST_URL}/dashboard?id=${SONAR_PROJECT_KEY}"
+
+                    PAYLOAD=$(cat <<EOF
+{
+  "text": "✅ *Deployment SUCCESS*\\n• Job: ${JOB_NAME}\\n• Build: #${BUILD_NUMBER}\\n• App: http://${TOMCAT_HOST}:${TOMCAT_PORT}${APP_CONTEXT}\\n• SonarQube: ${SONAR_DASHBOARD_URL}\\n• Channel: #webhook-test"
+}
+EOF
+                    )
+
+                    curl -X POST -H 'Content-type: application/json' \
+                         --data "$PAYLOAD" \
+                         "$SLACK_WEBHOOK_URL"
+                '''
+            }
+        }
+
+        failure {
+            withCredentials([
+                string(credentialsId: 'webhook', variable: 'SLACK_WEBHOOK_URL')
+            ]) {
+                sh '''
+                    PAYLOAD=$(cat <<EOF
+{
+  "text": "❌ *Deployment FAILED*\\n• Job: ${JOB_NAME}\\n• Build: #${BUILD_NUMBER}\\n• Console: ${BUILD_URL}\\n• Channel: #webhook-test"
+}
+EOF
+                    )
+
+                    curl -X POST -H 'Content-type: application/json' \
+                         --data "$PAYLOAD" \
+                         "$SLACK_WEBHOOK_URL"
+                '''
+            }
+        }
+    }
+}
+
+
+=====
+Integrate SonarQube with jenkins for Code Quality gate:
+=====
+
+pipeline {
+    agent any
+
+    tools {
+        maven 'maven'
+    }
+
+    environment {
+        // Tomcat details
+        TOMCAT_HOST = '65.1.1.45'
+        TOMCAT_PORT = '8080'
+        APP_CONTEXT = '/Springdemo-0.0.1-SNAPSHOT'
+
+        // SonarQube details
+        SONAR_HOST_URL     = 'http://172.31.6.188:9000'
+        SONAR_PROJECT_KEY  = 'myprodcode'
+        SONAR_PROJECT_NAME = 'prod-app-code'
+    }
+
+    stages {
+        stage('checkout') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/avizway1/awar05-jenkins.git'
+            }
+        }
+
+        stage('build') {
+            steps {
+                sh '''
+                    echo "Building my code using Maven..."
+                    mvn clean install
+                '''
+            }
+        }
+
+        stage('test') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+
+        stage('sonar-analysis') {
+            steps {
+                // SonarQube server name: "sonarqube" (configured in Jenkins global settings)
+                withSonarQubeEnv('sonarqube') {
+                    withCredentials([
+                        string(credentialsId: 'sonartoken', variable: 'SONAR_TOKEN')
+                    ]) {
+                        sh '''
+                            echo "Running SonarQube analysis..."
+
+                            mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+                              -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+                              -Dsonar.projectName=$SONAR_PROJECT_NAME \
+                              -Dsonar.host.url=$SONAR_HOST_URL \
+                              -Dsonar.token=$SONAR_TOKEN
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('quality-gate') {
+            steps {
+                // Wait for SonarQube to compute Quality Gate result (via webhook)
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('deploy-to-tomcat') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'tomcat',
+                        usernameVariable: 'TOMCAT_USER',
+                        passwordVariable: 'TOMCAT_PASS'
+                    )
+                ]) {
+                    sh '''
+                        echo "Finding WAR file..."
+                        WAR_FILE=$(ls target/*.war | head -n 1)
+                        echo "Deploying $WAR_FILE to Tomcat..."
+
+                        curl --fail -u "$TOMCAT_USER:$TOMCAT_PASS" \
+                          -T "$WAR_FILE" \
+                          "http://$TOMCAT_HOST:$TOMCAT_PORT/manager/text/deploy?path=$APP_CONTEXT&update=true"
+
+                        echo "Deployment triggered at: http://$TOMCAT_HOST:$TOMCAT_PORT$APP_CONTEXT"
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            withCredentials([
+                string(credentialsId: 'webhook', variable: 'SLACK_WEBHOOK_URL')
+            ]) {
+                sh '''
+                    SONAR_DASHBOARD_URL="${SONAR_HOST_URL}/dashboard?id=${SONAR_PROJECT_KEY}"
+
+                    PAYLOAD=$(cat <<EOF
+{
+  "text": "✅ *Deployment SUCCESS*\\n• Job: ${JOB_NAME}\\n• Build: #${BUILD_NUMBER}\\n• App: http://${TOMCAT_HOST}:${TOMCAT_PORT}${APP_CONTEXT}\\n• SonarQube: ${SONAR_DASHBOARD_URL}\\n• Channel: #webhook-test"
+}
+EOF
+                    )
+
+                    curl -X POST -H 'Content-type: application/json' \
+                         --data "$PAYLOAD" \
+                         "$SLACK_WEBHOOK_URL"
+                '''
+            }
+        }
+
+        failure {
+            withCredentials([
+                string(credentialsId: 'webhook', variable: 'SLACK_WEBHOOK_URL')
+            ]) {
+                sh '''
+                    PAYLOAD=$(cat <<EOF
+{
+  "text": "❌ *Deployment FAILED*\\n• Job: ${JOB_NAME}\\n• Build: #${BUILD_NUMBER}\\n• Console: ${BUILD_URL}\\n• Channel: #webhook-test"
+}
+EOF
+                    )
+
+                    curl -X POST -H 'Content-type: application/json' \
+                         --data "$PAYLOAD" \
+                         "$SLACK_WEBHOOK_URL"
+                '''
+            }
+        }
+    }
+}
+
+====
+Use S3 as Repository
+====
+
+pipeline {
+    agent any
+
+    tools {
+        maven 'maven'
+    }
+
+    environment {
+        // Tomcat details
+        TOMCAT_HOST = '65.1.1.45'
+        TOMCAT_PORT = '8080'
+        APP_CONTEXT = '/Springdemo-0.0.1-SNAPSHOT'
+
+        // SonarQube details
+        SONAR_HOST_URL     = 'http://172.31.6.188:9000'
+        SONAR_PROJECT_KEY  = 'myprodcode'
+        SONAR_PROJECT_NAME = 'prod-app-code'
+
+        // S3 "artifactory"
+        S3_BUCKET = 'aviz-code-artifactory'
+    }
+
+    stages {
+        stage('checkout') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/avizway1/awar05-jenkins.git'
+            }
+        }
+
+        stage('build') {
+            steps {
+                sh '''
+                    echo "Building my code using Maven..."
+                    mvn clean install
+                '''
+            }
+        }
+
+        stage('test') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+
+        stage('sonar-analysis') {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'sonartoken', variable: 'SONAR_TOKEN')
+                ]) {
+                    sh '''
+                        echo "Running SonarQube analysis..."
+
+                        mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+                          -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+                          -Dsonar.projectName=$SONAR_PROJECT_NAME \
+                          -Dsonar.host.url=$SONAR_HOST_URL \
+                          -Dsonar.token=$SONAR_TOKEN
+                    '''
+                }
+            }
+        }
+
+        stage('publish-artifact-to-s3') {
+            steps {
+                sh '''
+                    echo "Locating WAR file to upload to S3..."
+                    WAR_FILE=$(ls target/*.war | head -n 1)
+
+                    if [ -z "$WAR_FILE" ]; then
+                      echo "No WAR file found in target/"
+                      exit 1
+                    fi
+
+                    WAR_NAME=$(basename "$WAR_FILE")
+                    S3_KEY="prod-app-code/${BUILD_NUMBER}/${WAR_NAME}"
+
+                    echo "Uploading $WAR_FILE to s3://$S3_BUCKET/$S3_KEY ..."
+                    aws s3 cp "$WAR_FILE" "s3://$S3_BUCKET/$S3_KEY"
+
+                    echo "Artifact uploaded to S3: s3://$S3_BUCKET/$S3_KEY"
+                '''
+            }
+        }
+
+        stage('deploy-to-tomcat-from-s3') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'tomcat',
+                        usernameVariable: 'TOMCAT_USER',
+                        passwordVariable: 'TOMCAT_PASS'
+                    )
+                ]) {
+                    sh '''
+                        echo "Getting WAR name from S3 for this build..."
+
+                        WAR_NAME=$(aws s3 ls "s3://$S3_BUCKET/prod-app-code/${BUILD_NUMBER}/" | awk '{print $4}' | head -n 1)
+
+                        if [ -z "$WAR_NAME" ]; then
+                          echo "No WAR found in s3://$S3_BUCKET/prod-app-code/${BUILD_NUMBER}/"
+                          exit 1
+                        fi
+
+                        S3_KEY="prod-app-code/${BUILD_NUMBER}/${WAR_NAME}"
+                        LOCAL_WAR="/tmp/${WAR_NAME}"
+
+                        echo "Downloading WAR from S3: s3://$S3_BUCKET/$S3_KEY -> $LOCAL_WAR"
+                        aws s3 cp "s3://$S3_BUCKET/$S3_KEY" "$LOCAL_WAR"
+
+                        echo "Deploying $LOCAL_WAR to Tomcat..."
+                        curl --fail -u "$TOMCAT_USER:$TOMCAT_PASS" \
+                          -T "$LOCAL_WAR" \
+                          "http://$TOMCAT_HOST:$TOMCAT_PORT/manager/text/deploy?path=$APP_CONTEXT&update=true"
+
+                        echo "Deployment triggered at: http://$TOMCAT_HOST:$TOMCAT_PORT$APP_CONTEXT"
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            withCredentials([
+                string(credentialsId: 'webhook', variable: 'SLACK_WEBHOOK_URL')
+            ]) {
+                sh '''
+                    SONAR_DASHBOARD_URL="${SONAR_HOST_URL}/dashboard?id=${SONAR_PROJECT_KEY}"
+
+                    PAYLOAD=$(cat <<EOF
+{
+  "text": "✅ *Deployment SUCCESS*\\n• Job: ${JOB_NAME}\\n• Build: #${BUILD_NUMBER}\\n• App: http://${TOMCAT_HOST}:${TOMCAT_PORT}${APP_CONTEXT}\\n• SonarQube: ${SONAR_DASHBOARD_URL}\\n• Artifact: s3://${S3_BUCKET}/prod-app-code/${BUILD_NUMBER}/\\n• Channel: #webhook-test"
+}
+EOF
+                    )
+
+                    curl -X POST -H 'Content-type: application/json' \
+                         --data "$PAYLOAD" \
+                         "$SLACK_WEBHOOK_URL"
+                '''
+            }
+        }
+
+        failure {
+            withCredentials([
+                string(credentialsId: 'webhook', variable: 'SLACK_WEBHOOK_URL')
+            ]) {
+                sh '''
+                    PAYLOAD=$(cat <<EOF
+{
+  "text": "❌ *Deployment FAILED*\\n• Job: ${JOB_NAME}\\n• Build: #${BUILD_NUMBER}\\n• Console: ${BUILD_URL}\\n• Channel: #webhook-test"
+}
+EOF
+                    )
+
+                    curl -X POST -H 'Content-type: application/json' \
+                         --data "$PAYLOAD" \
+                         "$SLACK_WEBHOOK_URL"
+                '''
+            }
+        }
+    }
+}
+
+====
+Deploy artifacts to nexus
+====
+pipeline {
+    agent any
+
+    tools {
+        maven 'maven'
+    }
+
+    environment {
+        // Tomcat details
+        TOMCAT_HOST = '65.1.1.45'
+        TOMCAT_PORT = '8080'
+        APP_CONTEXT = '/Springdemo-0.0.1-SNAPSHOT'
+
+        // SonarQube details
+        SONAR_HOST_URL     = 'http://172.31.6.188:9000'
+        SONAR_PROJECT_KEY  = 'myprodcode'
+        SONAR_PROJECT_NAME = 'prod-app-code'
+
+        // Nexus details (adjust to your setup)
+        NEXUS_URL      = 'http://172.31.6.188:8081'           // <--- CHANGE IF DIFFERENT
+        NEXUS_REPO     = 'maven-releases'                     // <--- Your hosted Maven repo
+        NEXUS_REPO_ID  = 'nexus'                              // logical id we’ll use in altDeploymentRepository
+    }
+
+    stages {
+        stage('checkout') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/avizway1/awar05-jenkins.git'
+            }
+        }
+
+        stage('build') {
+            steps {
+                sh '''
+                    echo "Building my code using Maven..."
+                    mvn clean install
+                '''
+            }
+        }
+
+        stage('test') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+
+        stage('sonar-analysis') {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'sonartoken', variable: 'SONAR_TOKEN')
+                ]) {
+                    sh '''
+                        echo "Running SonarQube analysis..."
+
+                        mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+                          -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+                          -Dsonar.projectName=$SONAR_PROJECT_NAME \
+                          -Dsonar.host.url=$SONAR_HOST_URL \
+                          -Dsonar.token=$SONAR_TOKEN
+                    '''
+                }
+            }
+        }
+
+        stage('publish-artifact-to-nexus') {
+            steps {
+                // Nexus credentials: username/password with ID "nexus-creds" (create in Jenkins)
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'nexus-creds',
+                        usernameVariable: 'NEXUS_USER',
+                        passwordVariable: 'NEXUS_PASS'
+                    )
+                ]) {
+                    sh '''
+                        echo "Deploying artifact to Nexus..."
+
+                        # altDeploymentRepository syntax: id::layout::URL
+                        # For Nexus 3 Maven repo, layout is usually "default"
+                        mvn deploy \
+                          -DaltDeploymentRepository=${NEXUS_REPO_ID}::default::${NEXUS_URL}/repository/${NEXUS_REPO}/ \
+                          -Dusername=${NEXUS_USER} \
+                          -Dpassword=${NEXUS_PASS}
+
+                        echo "Deployment to Nexus completed."
+                    '''
+                }
+            }
+        }
+
+        stage('deploy-to-tomcat') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'tomcat',
+                        usernameVariable: 'TOMCAT_USER',
+                        passwordVariable: 'TOMCAT_PASS'
+                    )
+                ]) {
+                    sh '''
+                        echo "Finding WAR file in target/ for deployment to Tomcat..."
+                        WAR_FILE=$(ls target/*.war | head -n 1)
+
+                        if [ -z "$WAR_FILE" ]; then
+                          echo "No WAR file found in target/"
+                          exit 1
+                        fi
+
+                        echo "Deploying $WAR_FILE to Tomcat..."
+                        curl --fail -u "$TOMCAT_USER:$TOMCAT_PASS" \
+                          -T "$WAR_FILE" \
+                          "http://$TOMCAT_HOST:$TOMCAT_PORT/manager/text/deploy?path=$APP_CONTEXT&update=true"
+
+                        echo "Deployment triggered at: http://$TOMCAT_HOST:$TOMCAT_PORT$APP_CONTEXT"
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            withCredentials([
+                string(credentialsId: 'webhook', variable: 'SLACK_WEBHOOK_URL')
+            ]) {
+                sh '''
+                    SONAR_DASHBOARD_URL="${SONAR_HOST_URL}/dashboard?id=${SONAR_PROJECT_KEY}"
+
+                    PAYLOAD=$(cat <<EOF
+{
+  "text": "✅ *Deployment SUCCESS*\\n• Job: ${JOB_NAME}\\n• Build: #${BUILD_NUMBER}\\n• App: http://${TOMCAT_HOST}:${TOMCAT_PORT}${APP_CONTEXT}\\n• SonarQube: ${SONAR_DASHBOARD_URL}\\n• Nexus repo: ${NEXUS_URL}/repository/${NEXUS_REPO}/\\n• Channel: #webhook-test"
+}
+EOF
+                    )
+
+                    curl -X POST -H 'Content-type: application/json' \
+                         --data "$PAYLOAD" \
+                         "$SLACK_WEBHOOK_URL"
+                '''
+            }
+        }
+
+        failure {
+            withCredentials([
+                string(credentialsId: 'webhook', variable: 'SLACK_WEBHOOK_URL')
+            ]) {
+                sh '''
+                    PAYLOAD=$(cat <<EOF
+{
+  "text": "❌ *Deployment FAILED*\\n• Job: ${JOB_NAME}\\n• Build: #${BUILD_NUMBER}\\n• Console: ${BUILD_URL}\\n• Channel: #webhook-test"
+}
+EOF
+                    )
+
+                    curl -X POST -H 'Content-type: application/json' \
+                         --data "$PAYLOAD" \
+                         "$SLACK_WEBHOOK_URL"
+                '''
+            }
+        }
+    }
+}
+
+
+====
+nexus integration
+====
+
+pipeline {
+  agent any
+
+  tools {
+    maven 'maven'
+  }
+
+  environment {
+    // --- SonarQube ---
+    // Must match Jenkins → Manage Jenkins → Configure System → SonarQube servers
+    SONAR_SERVER_NAME = 'sonarqube'
+    SONAR_PROJECT_KEY = 'myprodcode'
+    SONAR_PROJECT_NAME = 'prod-app-code'
+    SONAR_HOST_URL    = 'http://172.31.6.188:9000'  // for links in Slack; analysis uses Jenkins Sonar config
+
+    // --- Nexus ---
+    // Base Nexus URL and repo IDs/names
+    NEXUS_URL           = 'http://172.31.6.188:8081'
+    RELEASE_REPO_ID     = 'maven-releases'     // used in <server><id> and altDeploymentRepository
+    SNAPSHOT_REPO_ID    = 'maven-snapshots'
+    RELEASE_REPO_NAME   = 'maven-releases'     // actual repo name in Nexus
+    SNAPSHOT_REPO_NAME  = 'maven-snapshots'
+    MVN_SETTINGS_FILE   = '.mvn-settings.xml'
+
+    // --- Tomcat ---
+    TOMCAT_BASE_URL   = 'http://65.1.1.45:8080'
+    TOMCAT_APP_PATH   = '/Springdemo-0.0.1-SNAPSHOT'
+
+    // --- Slack ---
+    SLACK_CHANNEL     = '#webhook-test'
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        git url: 'https://github.com/avizway1/awar05-jenkins.git', branch: 'main'
+      }
+    }
+
+    stage('Build + SonarQube Analysis') {
+      steps {
+        withSonarQubeEnv("${SONAR_SERVER_NAME}") {
+          // Sonar token from Jenkins credential "sonartoken" (Secret text)
+          withCredentials([string(credentialsId: 'sonartoken', variable: 'SONAR_TOKEN')]) {
+            sh '''
+              echo "Building + running SonarQube analysis..."
+
+              mvn -B clean verify \
+                org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+                -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                -Dsonar.projectName=${SONAR_PROJECT_NAME} \
+                -Dsonar.host.url=${SONAR_HOST_URL} \
+                -Dsonar.token=${SONAR_TOKEN}
+            '''
+          }
+        }
+      }
+    }
+
+    stage('Prepare Maven Settings for Nexus') {
+      steps {
+        // Jenkins credential: "nexus-creds" (Username with password) for Nexus
+        withCredentials([usernamePassword(credentialsId: 'nexus-creds',
+                                          usernameVariable: 'NEXUS_USER',
+                                          passwordVariable: 'NEXUS_PASS')]) {
+          sh '''
+cat > ${MVN_SETTINGS_FILE} <<EOF
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <servers>
+    <server>
+      <id>${RELEASE_REPO_ID}</id>
+      <username>${NEXUS_USER}</username>
+      <password>${NEXUS_PASS}</password>
+    </server>
+    <server>
+      <id>${SNAPSHOT_REPO_ID}</id>
+      <username>${NEXUS_USER}</username>
+      <password>${NEXUS_PASS}</password>
+    </server>
+  </servers>
+</settings>
+EOF
+          '''
+        }
+      }
+    }
+
+    stage('Deploy to Nexus') {
+      steps {
+        sh '''
+          echo "Determining project version..."
+          VERSION=$(mvn -q -Dexec.cleanupDaemonThreads=false \
+                         -Dexpression=project.version \
+                         -DforceStdout \
+                         help:evaluate)
+
+          echo "Project version is: $VERSION"
+
+          if echo "$VERSION" | grep -q "SNAPSHOT"; then
+            echo "Snapshot version detected. Using snapshot repository..."
+            REPO_ID=${SNAPSHOT_REPO_ID}
+            REPO_NAME=${SNAPSHOT_REPO_NAME}
+          else
+            echo "Release version detected. Using release repository..."
+            REPO_ID=${RELEASE_REPO_ID}
+            REPO_NAME=${RELEASE_REPO_NAME}
+          fi
+
+          REPO_URL=${NEXUS_URL}/repository/${REPO_NAME}/
+          echo "Deploying to Nexus repo: $REPO_ID at $REPO_URL"
+
+          mvn -B deploy \
+             -s ${MVN_SETTINGS_FILE} \
+             -DaltDeploymentRepository=${REPO_ID}::default::${REPO_URL}
+        '''
+      }
+    }
+
+    stage('Deploy to Tomcat') {
+      steps {
+        // Jenkins credential: "tomcat" (Username with password) for Tomcat manager
+        withCredentials([usernamePassword(credentialsId: 'tomcat',
+                                          usernameVariable: 'TC_USER',
+                                          passwordVariable: 'TC_PASS')]) {
+          sh '''
+            echo "Preparing to deploy to Tomcat..."
+
+            WAR_FILE=$(ls target/*.war | head -n 1)
+            if [ -z "$WAR_FILE" ]; then
+              echo "No WAR found in target/"
+              exit 1
+            fi
+
+            echo "Using WAR: $WAR_FILE"
+
+            set -e
+            echo "Trying rolling update deploy..."
+            curl -sS -u "$TC_USER:$TC_PASS" --fail \
+              --upload-file "$WAR_FILE" \
+              "${TOMCAT_BASE_URL}/manager/text/deploy?path=${TOMCAT_APP_PATH}&update=true" || {
+
+              echo "Update failed; attempting undeploy + fresh deploy…"
+
+              curl -sS -u "$TC_USER:$TC_PASS" --fail \
+                "${TOMCAT_BASE_URL}/manager/text/undeploy?path=${TOMCAT_APP_PATH}" || true
+
+              curl -sS -u "$TC_USER:$TC_PASS" --fail \
+                --upload-file "$WAR_FILE" \
+                "${TOMCAT_BASE_URL}/manager/text/deploy?path=${TOMCAT_APP_PATH}"
+            }
+
+            echo "Deployed ${WAR_FILE} to ${TOMCAT_BASE_URL}${TOMCAT_APP_PATH}"
+          '''
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      archiveArtifacts artifacts: 'target/**/*.war', allowEmptyArchive: true
+      sh 'rm -f ${MVN_SETTINGS_FILE} || true'
+    }
+
+    success {
+      // Slack Incoming Webhook stored as Secret Text "webhook"
+      withCredentials([string(credentialsId: 'webhook', variable: 'SLACK_WEBHOOK_URL')]) {
+        sh '''
+          SONAR_DASHBOARD_URL="${SONAR_HOST_URL}/dashboard?id=${SONAR_PROJECT_KEY}"
+          NEXUS_RELEASE_URL="${NEXUS_URL}/repository/${RELEASE_REPO_NAME}/"
+          NEXUS_SNAPSHOT_URL="${NEXUS_URL}/repository/${SNAPSHOT_REPO_NAME}/"
+
+          PAYLOAD=$(cat <<EOF
+{
+  "text": "✅ *Deployment SUCCESS*\\n• Job: ${JOB_NAME}\\n• Build: #${BUILD_NUMBER}\\n• App: ${TOMCAT_BASE_URL}${TOMCAT_APP_PATH}\\n• SonarQube: ${SONAR_DASHBOARD_URL}\\n• Nexus (releases): ${NEXUS_RELEASE_URL}\\n• Nexus (snapshots): ${NEXUS_SNAPSHOT_URL}\\n• Channel: ${SLACK_CHANNEL}"
+}
+EOF
+          )
+
+          curl -X POST -H 'Content-type: application/json' \
+               --data "$PAYLOAD" \
+               "$SLACK_WEBHOOK_URL"
+        '''
+      }
+    }
+
+    failure {
+      withCredentials([string(credentialsId: 'webhook', variable: 'SLACK_WEBHOOK_URL')]) {
+        sh '''
+          PAYLOAD=$(cat <<EOF
+{
+  "text": "❌ *Deployment FAILED*\\n• Job: ${JOB_NAME}\\n• Build: #${BUILD_NUMBER}\\n• Console: ${BUILD_URL}\\n• Channel: ${SLACK_CHANNEL}"
+}
+EOF
+          )
+
+          curl -X POST -H 'Content-type: application/json' \
+               --data "$PAYLOAD" \
+               "$SLACK_WEBHOOK_URL"
+        '''
+      }
+    }
+  }
+}
