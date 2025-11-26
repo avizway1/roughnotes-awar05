@@ -1,0 +1,85 @@
+Trivy is a simple, fast, and open-source security scanner used to find security issues in your DevOps and cloud-native environments.
+
+It helps you detect:
+
+✅ Vulnerabilities in OS packages and application dependencies
+✅ Misconfigurations in Kubernetes, Docker, Terraform, etc.
+✅ Secrets & credentials leaks (API keys, tokens, passwords)
+✅ License issues
+✅ SBOM (Software Bill of Materials) generation
+
+
+Why DevOps Engineers Love Trivy
+
+Very easy to install
+One binary, no complex setup
+Supports containers, code, k8s, IaC, cloud configs
+Works offline once DB is downloaded
+Integrates with almost all CI/CD tools
+
+---
+
+# Update base system
+sudo dnf update -y
+
+# Install curl if needed
+sudo dnf install -y curl
+
+# Install Trivy into /usr/local/bin  (version from docs; change as you wish)
+curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+  | sudo sh -s -- -b /usr/local/bin v0.67.2
+
+# Confirm
+trivy --version
+
+
+mkdir -p /opt/trivy-tmp
+mkdir -p /opt/trivy-cache
+
+export TMPDIR=/opt/trivy-tmp
+export TRIVY_CACHE_DIR=/opt/trivy-cache
+
+
+---
+
+trivy image nginx:latest
+
+trivy image --severity HIGH,CRITICAL nginx:latest
+
+
+trivy image nginx:latest \
+  --format json --severity HIGH \
+  --output trivy-results.json
+
+
+---
+
+# Scan current directory (vulns + secrets by default)
+trivy fs .
+
+# Enable misconfig + secrets + vulns explicitly, with severity filter
+trivy fs --scanners vuln,misconfig,secret \
+         --severity HIGH,CRITICAL \
+         .
+
+---
+
+# Remote repo
+trivy repo https://github.com/avizway1/awar05-jenkins.git
+
+# Local repo
+trivy repo /path/to/your/repo
+
+---
+
+
+# Summary of whole cluster (using current kubeconfig context)
+trivy k8s --report summary cluster
+
+# Only a specific namespace
+trivy k8s --include-namespaces kube-system --report summary cluster
+
+# More detailed report (be prepared for a lot of output)
+trivy k8s --report all cluster
+
+---

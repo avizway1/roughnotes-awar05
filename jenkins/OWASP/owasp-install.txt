@@ -1,0 +1,17 @@
+OWASP Configuration..
+
+1. Install plugin "OWASP Dependency-Check Plugin" and "HTML Publisher Plugin"
+
+2. Configure the tool.. "Dependency-Check installations" and give a name and then choose Install from "github" and choose the required version
+
+3. configure 
+
+NVD key : generate this key and add as a secret in your jenkins..
+
+https://nvd.nist.gov/developers/request-an-api-key
+
+get an APi key from above link and add it as a secret in jenkins.. 
+
+
+Arguments help doc:
+https://dependency-check.github.io/DependencyCheck/dependency-check-cli/arguments.html

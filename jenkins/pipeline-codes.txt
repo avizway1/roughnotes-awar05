@@ -502,7 +502,7 @@ pipeline {
         stage('sonar-analysis') {
             steps {
                 withCredentials([
-                    string(credentialsId: 'sonartoken', variable: 'SONAR_TOKEN')
+                    string(credentialsId: 'sonar', variable: 'SONAR_TOKEN')
                 ]) {
                     sh '''
                         echo "Running SonarQube analysis..."
@@ -587,173 +587,6 @@ pipeline {
                     PAYLOAD=$(cat <<EOF
 {
   "text": "✅ *Deployment SUCCESS*\\n• Job: ${JOB_NAME}\\n• Build: #${BUILD_NUMBER}\\n• App: http://${TOMCAT_HOST}:${TOMCAT_PORT}${APP_CONTEXT}\\n• SonarQube: ${SONAR_DASHBOARD_URL}\\n• Artifact: s3://${S3_BUCKET}/prod-app-code/${BUILD_NUMBER}/\\n• Channel: #webhook-test"
-}
-EOF
-                    )
-
-                    curl -X POST -H 'Content-type: application/json' \
-                         --data "$PAYLOAD" \
-                         "$SLACK_WEBHOOK_URL"
-                '''
-            }
-        }
-
-        failure {
-            withCredentials([
-                string(credentialsId: 'webhook', variable: 'SLACK_WEBHOOK_URL')
-            ]) {
-                sh '''
-                    PAYLOAD=$(cat <<EOF
-{
-  "text": "❌ *Deployment FAILED*\\n• Job: ${JOB_NAME}\\n• Build: #${BUILD_NUMBER}\\n• Console: ${BUILD_URL}\\n• Channel: #webhook-test"
-}
-EOF
-                    )
-
-                    curl -X POST -H 'Content-type: application/json' \
-                         --data "$PAYLOAD" \
-                         "$SLACK_WEBHOOK_URL"
-                '''
-            }
-        }
-    }
-}
-
-====
-Deploy artifacts to nexus
-====
-pipeline {
-    agent any
-
-    tools {
-        maven 'maven'
-    }
-
-    environment {
-        // Tomcat details
-        TOMCAT_HOST = '65.1.1.45'
-        TOMCAT_PORT = '8080'
-        APP_CONTEXT = '/Springdemo-0.0.1-SNAPSHOT'
-
-        // SonarQube details
-        SONAR_HOST_URL     = 'http://172.31.6.188:9000'
-        SONAR_PROJECT_KEY  = 'myprodcode'
-        SONAR_PROJECT_NAME = 'prod-app-code'
-
-        // Nexus details (adjust to your setup)
-        NEXUS_URL      = 'http://172.31.6.188:8081'           // <--- CHANGE IF DIFFERENT
-        NEXUS_REPO     = 'maven-releases'                     // <--- Your hosted Maven repo
-        NEXUS_REPO_ID  = 'nexus'                              // logical id we’ll use in altDeploymentRepository
-    }
-
-    stages {
-        stage('checkout') {
-            steps {
-                git branch: 'main',
-                    url: 'https://github.com/avizway1/awar05-jenkins.git'
-            }
-        }
-
-        stage('build') {
-            steps {
-                sh '''
-                    echo "Building my code using Maven..."
-                    mvn clean install
-                '''
-            }
-        }
-
-        stage('test') {
-            steps {
-                sh 'mvn test'
-            }
-        }
-
-        stage('sonar-analysis') {
-            steps {
-                withCredentials([
-                    string(credentialsId: 'sonartoken', variable: 'SONAR_TOKEN')
-                ]) {
-                    sh '''
-                        echo "Running SonarQube analysis..."
-
-                        mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-                          -Dsonar.projectKey=$SONAR_PROJECT_KEY \
-                          -Dsonar.projectName=$SONAR_PROJECT_NAME \
-                          -Dsonar.host.url=$SONAR_HOST_URL \
-                          -Dsonar.token=$SONAR_TOKEN
-                    '''
-                }
-            }
-        }
-
-        stage('publish-artifact-to-nexus') {
-            steps {
-                // Nexus credentials: username/password with ID "nexus-creds" (create in Jenkins)
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'nexus-creds',
-                        usernameVariable: 'NEXUS_USER',
-                        passwordVariable: 'NEXUS_PASS'
-                    )
-                ]) {
-                    sh '''
-                        echo "Deploying artifact to Nexus..."
-
-                        # altDeploymentRepository syntax: id::layout::URL
-                        # For Nexus 3 Maven repo, layout is usually "default"
-                        mvn deploy \
-                          -DaltDeploymentRepository=${NEXUS_REPO_ID}::default::${NEXUS_URL}/repository/${NEXUS_REPO}/ \
-                          -Dusername=${NEXUS_USER} \
-                          -Dpassword=${NEXUS_PASS}
-
-                        echo "Deployment to Nexus completed."
-                    '''
-                }
-            }
-        }
-
-        stage('deploy-to-tomcat') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'tomcat',
-                        usernameVariable: 'TOMCAT_USER',
-                        passwordVariable: 'TOMCAT_PASS'
-                    )
-                ]) {
-                    sh '''
-                        echo "Finding WAR file in target/ for deployment to Tomcat..."
-                        WAR_FILE=$(ls target/*.war | head -n 1)
-
-                        if [ -z "$WAR_FILE" ]; then
-                          echo "No WAR file found in target/"
-                          exit 1
-                        fi
-
-                        echo "Deploying $WAR_FILE to Tomcat..."
-                        curl --fail -u "$TOMCAT_USER:$TOMCAT_PASS" \
-                          -T "$WAR_FILE" \
-                          "http://$TOMCAT_HOST:$TOMCAT_PORT/manager/text/deploy?path=$APP_CONTEXT&update=true"
-
-                        echo "Deployment triggered at: http://$TOMCAT_HOST:$TOMCAT_PORT$APP_CONTEXT"
-                    '''
-                }
-            }
-        }
-    }
-
-    post {
-        success {
-            withCredentials([
-                string(credentialsId: 'webhook', variable: 'SLACK_WEBHOOK_URL')
-            ]) {
-                sh '''
-                    SONAR_DASHBOARD_URL="${SONAR_HOST_URL}/dashboard?id=${SONAR_PROJECT_KEY}"
-
-                    PAYLOAD=$(cat <<EOF
-{
-  "text": "✅ *Deployment SUCCESS*\\n• Job: ${JOB_NAME}\\n• Build: #${BUILD_NUMBER}\\n• App: http://${TOMCAT_HOST}:${TOMCAT_PORT}${APP_CONTEXT}\\n• SonarQube: ${SONAR_DASHBOARD_URL}\\n• Nexus repo: ${NEXUS_URL}/repository/${NEXUS_REPO}/\\n• Channel: #webhook-test"
 }
 EOF
                     )
@@ -997,3 +830,4 @@ EOF
     }
   }
 }
+
