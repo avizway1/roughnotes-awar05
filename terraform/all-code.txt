@@ -1,0 +1,278 @@
+
+=====
+count 
+=====
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+resource "aws_instance" "web" {
+  count         = 2
+  ami           = "ami-02b8269d5e85954ef"
+  instance_type = "t3.small"
+  tags = {
+    Name = "my-tf-instance"
+  }
+}
+
+
+=====
+count with index added to Name
+=====
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+resource "aws_instance" "web" {
+  count         = 2
+  ami           = "ami-02b8269d5e85954ef"
+  instance_type = "t3.small"
+  tags = {
+    Name = "my-tf-${count.index+1}"
+  }
+}
+
+====
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+resource "aws_instance" "web" {
+
+  ami           = "ami-02b8269d5e85954ef"
+  instance_type = "t3.small"
+  tags = {
+    Name = "My-tf-instance"
+  }
+}
+
+====
+for_each
+====
+
+variable "bucket_names" {
+  type    = set(string)
+  default = ["logs", "data", "backups"]
+}
+
+resource "aws_s3_bucket" "buckets" {
+  for_each = var.bucket_names
+  bucket   = "myapp-${each.key}"
+  
+  tags = {
+    Name = each.key
+  }
+}
+
+====
+depends_on
+====
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+resource "aws_instance" "web" {
+  ami           = "ami-02b8269d5e85954ef"
+  instance_type = "t3.small"
+  tags = {
+    Name = "my-tf-instance"
+  }
+}
+
+resource "aws_s3_bucket" "mybucket" {
+  bucket = "aviz-tf-awar05-demo"
+  depends_on = [ aws_instance.web ]
+}
+
+
+=====
+provider block - with alias
+=====
+provider "aws" {
+  region = "ap-south-1"
+}
+
+provider "aws" {
+  region = "us-east-1"
+  alias = "usa"
+}
+
+resource "aws_instance" "web" {
+  ami           = "ami-02b8269d5e85954ef"
+  instance_type = "t3.small"
+  tags = {
+    Name = "my-mumbai-instance"
+  }
+}
+
+resource "aws_instance" "db" {
+  provider = aws.usa
+  ami           = "ami-0fa3fe0fa7920f68e"
+  instance_type = "t3.small"
+  tags = {
+    Name = "my-NV-Instance"
+  }
+}
+
+=======
+Terraform meta-arguments : Lifecycle
+=======
+
+===
+Create before destroy
+===
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+resource "aws_instance" "web" {
+  ami           = "ami-0d176f79571d18a8f"
+  instance_type = "t3.small"
+  lifecycle {
+    create_before_destroy = true
+  }
+  tags = {
+    Name = "My-tf-instance"
+  }
+}
+
+====
+prevent_destroy
+====
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+resource "aws_instance" "web" {
+  ami           = "ami-0d176f79571d18a8f"
+  instance_type = "t3.small"
+  lifecycle {
+    prevent_destroy = true
+  }
+  tags = {
+    Name = "My-tf-instance"
+  }
+}
+
+====
+ignore_changes
+====
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+resource "aws_instance" "web" {
+  ami           = "ami-0d176f79571d18a8f"
+  instance_type = "t3.micro"
+  lifecycle {
+    ignore_changes = [instance_type]
+  }
+  tags = {
+    Name = "My-tf-namechange"
+  }
+}
+
+
+==========
+Statefile management code
+==========
+
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+# Below code is for local Backend
+
+# terraform {
+#   backend "local" {
+#     path = "/Users/avizway/Desktop/statefile/terraform.tfstate"
+#   }
+# }
+
+
+# Below code is for S3 Backend
+
+# terraform {
+#   backend "s3" {
+#     bucket = "aviz-terraform-state-location"
+#     key    = "myprodstate/terraform.tfstate"
+#     region = "ap-south-1"
+#     use_lockfile = true
+#   }
+# }
+
+
+resource "aws_instance" "web" {
+  ami           = "ami-0d176f79571d18a8f"
+  instance_type = "t3.micro"
+  tags = {
+    Name = "My-tf-namechange"
+  }
+}
+
+
+=====
+import block
+=====
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+resource "aws_instance" "mymanualins" {
+  ami           = "ami-0d176f79571d18a8f"
+  instance_type = "t3.micro"
+}
+
+import {
+  to = aws_instance.mymanualins
+  id = "i-00f876847b259043b"
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

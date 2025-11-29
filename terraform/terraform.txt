@@ -1,0 +1,98 @@
+Pre-Req: 
+1. Install an IDE (Kiro / Visual Studio)
+2. AWS CLI Tools install and Configure (aws configure)
+3. Install terraform
+
+Enable hashicorp terraform and hashicoprp HCL plugins in your IDE.
+
+terraform init          --> initialise the directory    (.terraform)
+terraform validate      --> validates the code/script (Syntax errors)
+terraform fmt           --> Formats the terraform code
+terraform plan          --> Kind of DryRun. Shows whats going to happen when we deploy this.. (Add, Modify, destroy)
+terraform apply         --> Create/deployes the resources by executing the tf code
+
+terraform apply -auto-approve   --> picks yes as an option and apply the chnages
+
+
+terraform prevent_destroy 	--> Prevent resource from destroy
+
+terraform state list		--> Will list the resources available in statefile
+
+terraform destroy -target=aws_instance.db
+terraform destroy -target=aws_instance.db -target=aws_instance.web
+
+terraform meta-arguments:
+
+count 				--> We can define how many identical resources we want to create.
+
+for_each
+
+depends_on
+provider
+
+lifecycle
+
+
+---
+parallelism : terraform has capability to create 10 resources at a time.. we can increase
+
+terraform apply -parallelism=20
+
+---
+
+In a tf workspace, we cannot have multiple providers.. To define multiple providers, we can use "alias".. and add that alias to the resource block.. 
+
+---
+create_before_destroy : creates new resour ce befor it destroy the existing resources.
+prevent-destroy : Protect/prevent resources from accidental destruction
+ignore_changes : ignore specific settings during "terraform apply"
+
+---
+
+statefile act as "source of truth" for tracking the current state.
+you do any modifications, it will be tracked by statefile.
+Defaultly it creates when we deploy our first resources after initialising the tf workspace.
+
+
+terraform init -migrate-state
+
+terraform state list					--> shows all the resources managed by statefile
+terraform state show aws_instance.web	--> Shows the resource info created using that particular block
+terraform force-unlock a1b2c3d4-5678-9101		--> It will forcefully unlock the statefile lock
+
+---
+
+Import block : helps to import configuration of the resources created out side of the terraform (manually)..
+
+
+terraform init
+terraform plan -generate-config-out=ec2.tf
+terraform apply
+
+test by changing the instance config..
+---
+
+Log levels:
+
+TRACE - most detailed logs
+DEBUG - Debug level logs (cotnains info, errors & warnings)
+INFO - general info (cotnains errors & warnings)
+WARN - warnings (along with errors)
+ERROR - Error only
+
+
+export TF_LOG=<log-level>
+
+export TF_LOG=INFO
+
+export TF_LOG_PATH="tflogs.log"
+
+
+
+
+
+
+
+
+
+
