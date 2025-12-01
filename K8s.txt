@@ -131,6 +131,9 @@ LoadBalancer : Exposing application using a dedicated LB to outside world.
 eksctl create cluster --name=ekswithavinash --version 1.33 --region ap-south-1 --zones=ap-south-1a,ap-south-1b --nodegroup-name ng-default --node-type t3.small --nodes 2 --node-ami-family=AmazonLinux2023 --managed
 
 
+eksctl create cluster --name=ekswithavinash --version 1.33 --region ap-south-1 --zones=ap-south-1a,ap-south-1b --nodegroup-name ng-default --node-type t3.small --nodes 2 --node-ami-family=AmazonLinux2023 --managed
+
+
 OIDC : IAM OpenID COnnect : This allows AWS IAM to authenticate with K8s serviceaccounts, IAM permisisons and roles.
 
 
