@@ -144,6 +144,13 @@ eksctl utils associate-iam-oidc-provider --region ap-south-1 --cluster ekswithav
 
 eksctl delete cluster --name ekswithavinash
 
+
+--> To access EKS from another machine..
+aws eks update-kubeconfig --region ap-south-1 --name ekswithavinash
+
+
+
+
 ---
 
 kubectl get all
@@ -812,4 +819,30 @@ kubectl exec -n default -it curl-naked-2 -- \
   curl -v http://productpage:9080/productpage
 
 
+
+-----
+
+
+~/.kube/config
+
+
+kubectl config get-contexts
+kubectl config current-context
+
+# add Dev cluster (Cluster1)
+aws eks update-kubeconfig --region <region> --name cluster1 --alias dev-cluster
+# add UAT cluster (Cluster2)
+aws eks update-kubeconfig --region <region> --name cluster2 --alias uat-cluster
+
+
+aws eks update-kubeconfig --region ap-south-1 --name ekswithavinash --alias dev-cluster
+aws eks update-kubeconfig --region ap-south-1 --name ekswithavinash-uat --alias uat-cluster
+
+
+kubectl config use-context dev-cluster    # switch to Dev/Cluster1
+kubectl config use-context uat-cluster    # switch to UAT/Cluster2
+
+
+kubectl --context=dev-cluster get pods
+kubectl --context=uat-cluster get pods
 

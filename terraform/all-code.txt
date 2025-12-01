@@ -238,6 +238,72 @@ import {
 }
 
 
+===========
+Variables - String Example
+==========
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+variable "instance_type" {
+  type = string
+  default = "t3.micro"
+}
+
+resource "aws_instance" "web" {
+  ami           = "ami-0d176f79571d18a8f"
+  instance_type = var.instance_type
+  tags = {
+    Name = "My-tf-instance"
+    environment = "dev"
+  }
+}
+
+
+===========
+Variables - List Example
+==========
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+variable "instance_type" {
+  type = list(string)
+  default = ["t3.micro","t3.small","t3.large"]
+}
+
+resource "aws_instance" "list_example" {
+  ami           = "ami-0d176f79571d18a8f"
+  instance_type = var.instance_type[1]			# It picks Second string from the list
+  tags = {
+    Name = "My-tf-instance"
+    environment = "dev"
+  }
+}
+
+=====
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

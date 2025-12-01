@@ -87,6 +87,49 @@ export TF_LOG=INFO
 
 export TF_LOG_PATH="tflogs.log"
 
+---
+
+replace --> it will terminate the resources and re-create again.. 
+
+Terraform replace
+
+terraform plan -replace="aws_instance.web"
+
+---
+
+
+Drift detection : We can identify resource modifications performed outside of terraform.
+
+We can use below command to identify the chnages..
+
+terraform plan -refresh-only
+
+teraform plan and apply to refresh the tfstae automatically.
+
+---
+
+variables :
+
+1. String : text value : "dev" "t2.micro", "ap-south-1"
+2. Number : Numeric value : 10, 20, 3
+3. Bool : true, false
+4. list : Collection of value : ["t3.micro","t3.small","t3.large"]
+5. Map : key and value pair : {Name="dev",envieonment="uat"}
+6. Tuple : Combination of multiple avriables : {"dev", 2, false}
+
+---
+
+terraform output
+
+
+
+
+
+
+
+
+
+
 
 
 
