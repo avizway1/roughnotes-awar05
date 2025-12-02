@@ -121,6 +121,37 @@ variables :
 
 terraform output
 
+====
+
+Refer the seperate folder in repo for Modules block code
+
+====
+
+
+Dynamic Block: THis helps to avoid writing same nested blocks multiple times.. Used for_each to loop over a list or map.
+
+
+====
+
+Data Block ; With data blocks we cannot create resources, its used to fetch existing information only
+
+
+====
+
+remote-exec : helps to connect to the instance we are launching and we can execute the commands inside the ec2 instance once its launched..
+
+====
+
+
+
+
+
+
+
+
+
+
+
 
 
 

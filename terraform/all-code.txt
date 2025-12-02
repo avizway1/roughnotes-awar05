@@ -285,6 +285,149 @@ resource "aws_instance" "list_example" {
 
 =====
 
+WITHOUT DYNAMIC - BLOCK
+======
+
+resource "aws_security_group" "manual_create" {
+  name   = "testing-manual-sg"
+  vpc_id = "vpc-047489d5215aae1cc"
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    from_port   = 2049
+    to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    from_port   = 2001
+    to_port     = 2001
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+
+======
+WITH DYNAMIC BLOCK
+======
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+locals {
+  ingress_rules = [
+    { port = 443 },
+    { port = 80 },
+    { port = 22 },
+    { port = 8080 },
+    { port = 8888}
+  ]
+}
+
+resource "aws_security_group" "dynamic_example" {
+    name   = "testing-dynamic-sg"
+    vpc_id = "vpc-047489d5215aae1cc"
+
+    dynamic "ingress" {
+        for_each = local.ingress_rules
+      content {
+        from_port = ingress.value.port
+        to_port   = ingress.value.port
+        protocol  = "tcp"
+        cidr_blocks = ["0.0.0.0/0"]
+      }
+    }
+}
+
+===
+DATA BLOCK CODE
+====
+data "aws_ami" "al2023" {
+  most_recent = true
+  owners      = ["amazon"]
+  filter {
+    name   = "name"
+    values = ["al2023-ami-*-x86_64"]
+  }
+}
+
+resource "aws_instance" "web" {
+  ami           = data.aws_ami.al2023.id
+  instance_type = "t3.micro"
+}
+
+=====
+REMOTE-EXEC
+=====
+
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+resource "aws_instance" "web" {
+  ami                    = "ami-02d05f76acbed4e3e"
+  instance_type          = "t3.micro"
+  vpc_security_group_ids = ["sg-0e244adb6f393f9b9"]
+  key_name               = "awar06-lnx"
+
+  connection {
+    type        = "ssh"
+    user        = "ec2-user"
+    private_key = file("/Users/avizway/Desktop/keypairs/awar06-lnx.pem")
+    host        = self.public_ip
+    agent       = false
+  }
+  provisioner "remote-exec" {
+    inline = [
+      "sudo yum install httpd -y",
+      "sudo systemctl enable httpd --now",
+      "echo '<h1> Deployed via Terraform </h1>' | sudo tee /var/www/html/index.html"
+    ]
+  }
+  tags = {
+    Name = "webserver"
+  }
+}
+
+======
+PASS USER-DATA via TEMPLATE
+======
+
+provider "aws" {
+  region = "ap-south-1"
+}
+
+resource "aws_instance" "new" {
+  ami                    = "ami-02d05f76acbed4e3e"
+  instance_type          = "t3.micro"
+  vpc_security_group_ids = ["sg-0e244adb6f393f9b9"]
+  key_name               = "awar06-lnx"
+  user_data              = file("${path.module}/userdata.txt")
+
+  tags = {
+    Name = "webserver-with-userdata"
+  }
+}
 
 
 
