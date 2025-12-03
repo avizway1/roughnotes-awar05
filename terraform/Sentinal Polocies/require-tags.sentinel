@@ -1,0 +1,48 @@
+# require-tags.sentinel
+import "tfplan/v2" as tfplan
+import "strings"
+
+required = ["project", "costcenter", "owner"]
+
+missing = {}
+
+# helper function: safely get tags map from resource after state
+get_tags = func(change) {
+    after = change.change.after else {}
+    tags = after.tags else {}
+    # some modules use lowercase or different types; normalize keys to lowercase
+    normalized = {}
+    for k, v in tags {
+        normalized[strings.lower(k)] = v
+    }
+    return normalized
+}
+
+# iterate all resource types (we will check only resources that have tags attribute present in the plan)
+for rtype, resources in tfplan.resource_changes {
+    for rname, change in resources {
+        tags = get_tags(change)
+        # only check if resource has any tag-related attribute (skip ones without tags attribute)
+        if length(tags) == 0 {
+            # but some resources might not include tags in plan if empty; still enforce: treat missing as violation
+            # check if the after block contains tags key at all
+            after = change.change.after else {}
+            if after.tags is none {
+                # missing tags attribute entirely -> violation
+                missing[format("%s.%s", rtype, rname)] = required
+                continue
+            }
+        }
+        # check required keys
+        for req in required {
+            if not tags contains strings.lower(req) or tags[strings.lower(req)] == "" {
+                missing[format("%s.%s", rtype, rname)] = missing[format("%s.%s", rtype, rname)] else []
+                missing[format("%s.%s", rtype, rname)].append(req)
+            }
+        }
+    }
+}
+
+main = rule {
+    length(missing) == 0
+}

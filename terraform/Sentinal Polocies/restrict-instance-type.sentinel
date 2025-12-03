@@ -1,0 +1,53 @@
+# restrict-instance-type.sentinel
+import "tfplan/v2" as tfplan
+import "strings"
+
+# allowed list - keep these exact instance-type strings that you allow (include micro/small types)
+allowed = [
+    "t2.micro",
+    "t3.small",
+]
+
+violations = []
+
+# Get all EC2 instances
+instances = filter tfplan.resource_changes as _, rc {
+    rc.type is "aws_instance" and
+    rc.mode is "managed" and
+    (rc.change.actions contains "create" or rc.change.actions contains "update")
+}
+
+# Check each instance
+for instances as addr, change {
+    after = change.change.after else {}
+    itype = after.instance_type else ""
+    
+    if itype is "" {
+        # sometimes instance_type is computed or coming from var
+        append(violations, addr)
+    } else {
+        if itype not in allowed {
+            append(violations, addr)
+        }
+    }
+}
+
+# Also check aws_launch_template instance type
+lt_changes = filter tfplan.resource_changes as _, rc {
+    rc.type is "aws_launch_template" and
+    rc.mode is "managed" and
+    (rc.change.actions contains "create" or rc.change.actions contains "update")
+}
+
+for lt_changes as addr, change {
+    after = change.change.after else {}
+    inst_type = after.instance_type else ""
+    
+    if inst_type is not "" and inst_type not in allowed {
+        append(violations, addr)
+    }
+}
+
+main = rule {
+    length(violations) is 0
+}

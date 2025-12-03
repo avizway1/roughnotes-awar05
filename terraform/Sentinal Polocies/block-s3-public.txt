@@ -1,0 +1,57 @@
+import "tfplan/v2" as tfplan
+import "strings"
+
+# Get all S3 bucket resources
+s3_buckets = filter tfplan.resource_changes as _, rc {
+  rc.type is "aws_s3_bucket" and
+  rc.mode is "managed" and
+  (rc.change.actions contains "create" or rc.change.actions contains "update")
+}
+
+# Get all S3 bucket public access block resources
+s3_public_access_blocks = filter tfplan.resource_changes as _, rc {
+  rc.type is "aws_s3_bucket_public_access_block" and
+  rc.mode is "managed" and
+  (rc.change.actions contains "create" or rc.change.actions contains "update")
+}
+
+# Get all S3 bucket ACL resources
+s3_bucket_acls = filter tfplan.resource_changes as _, rc {
+  rc.type is "aws_s3_bucket_acl" and
+  rc.mode is "managed" and
+  (rc.change.actions contains "create" or rc.change.actions contains "update")
+}
+
+# Check for public ACLs
+validate_bucket_acl = rule {
+  all s3_bucket_acls as _, acl {
+    acl.change.after.acl not in ["public-read", "public-read-write"]
+  }
+}
+
+# Check that public access block is configured correctly
+validate_public_access_block = rule {
+  all s3_public_access_blocks as _, pab {
+    pab.change.after.block_public_acls is true and
+    pab.change.after.block_public_policy is true and
+    pab.change.after.ignore_public_acls is true and
+    pab.change.after.restrict_public_buckets is true
+  }
+}
+
+# Ensure every bucket has a corresponding public access block
+validate_all_buckets_protected = rule {
+  all s3_buckets as _, bucket {
+    any s3_public_access_blocks as _, pab {
+      pab.change.after.bucket contains bucket.name or
+      pab.change.after.bucket is bucket.address
+    }
+  }
+}
+
+# Main rule - all validations must pass
+main = rule {
+  (length(s3_bucket_acls) is 0 or validate_bucket_acl) and
+  (length(s3_public_access_blocks) is 0 or validate_public_access_block) and
+  (length(s3_buckets) is 0 or validate_all_buckets_protected)
+}
