@@ -329,7 +329,6 @@ Fargate and Self-managed instances
 
 Self-managed instances - you must ensure the instances are patched and scaled properly, and you have full control over the instances.
 
-
 ---
 
 Step 1 : Create an ECS cluster.. Provide a name, Choose "enhanced logging".. THen create.. 
