@@ -12,6 +12,7 @@ Slash commands are **typed shortcuts** that start with `/` and control your Clau
 ```
 Regular prompt   →  "Add a login feature"          (asks Claude to do work)
 Slash command    →  /clear                          (controls the session)
+effore mode set  →  /effort
 ```
 
 > 💡 **Rule of Thumb:** If you're managing memory, context, config, or session state — use a slash command.
