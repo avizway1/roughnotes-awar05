@@ -14,6 +14,56 @@ Both agents live in `.claude/agents/` inside the project folder and are automati
 
 ---
 
+## What Are Sub-Agents?
+
+A sub-agent is an **isolated Claude instance** with its own context window. You give it a task, it does the work independently, and returns only the result — not all the noise in between.
+
+Think of it like being a tech lead. Instead of doing every side task yourself and cluttering your own headspace, you delegate to a specialist. They go off, do the job, and come back with just the answer.
+
+```
+Main Session (You)
+│
+├──► Sub-Agent A  ← own context, own tools, own focus
+├──► Sub-Agent B  ← own context, own tools, own focus
+│
+└──► Only the results come back to you
+```
+
+Sub-agent files live as markdown in `.claude/agents/` and are automatically available to Claude Code once created.
+
+---
+
+## Why Do We Need Sub-Agents?
+
+| Problem Without Sub-Agents | How Sub-Agents Solve It |
+|---|---|
+| Context window fills up with file reading noise | Each sub-agent has its own fresh context window |
+| Side tasks block your main work | Sub-agents can run independently (and in parallel) |
+| Same specialist task repeated across sessions | Define once in `.claude/agents/`, reuse forever |
+| Too many tools in one session = higher risk | Each sub-agent gets only the tools it needs |
+| One model for everything = expensive | Route simple tasks to Haiku, complex ones to Sonnet |
+| Hard to share workflows across a team | Project-level agents in `.claude/agents/` are shared via Git |
+
+The core principle is the same one you already teach in DevSecOps: **least privilege**. A planning agent should never have write access. A read-only reviewer should never be able to run bash commands. Sub-agents enforce this at the agent level.
+
+---
+
+## Built-in Sub-Agents
+
+Claude Code ships with built-in sub-agents that it uses automatically — you don't need to configure them. They kick in behind the scenes when Claude decides they're the right tool for the job.
+
+| Built-in Agent | Purpose | When Claude Uses It |
+|---|---|---|
+| **Explore** | Fast, read-only codebase search and analysis | When Claude needs to understand your code before making changes |
+| **Plan** | Research and context gathering for plan mode | When you run in plan mode and Claude needs to explore before proposing a plan |
+| **General-purpose** | Flexible sub-agent for delegated tasks | When Claude spawns a worker for any isolated subtask |
+
+You've already seen these in action — every time Claude says "let me explore the codebase first" before making a change, it's using the Explore sub-agent under the hood.
+
+Custom sub-agents (like the ones we build in this episode) work the same way, but with your own system prompt, tool restrictions, and model choice.
+
+---
+
 ## How Sub-Agents Are Created
 
 You do NOT write the agent files manually. Instead, you use the `/agents` command in Claude Code and provide a prompt describing what the agent should do. Claude Code generates the full agent file for you.
@@ -49,12 +99,18 @@ The project uses:
 The agent should:
 1. Read index.html and style.css fully before forming any opinion
 2. Identify specific UI improvements — layout, spacing, colors, typography, usability
-3. Output a numbered, structured plan with:
+3. Always include this as one of the planned changes:
+   - Add an Aviz Academy branded footer containing:
+     * Text: "© Aviz Academy" with the current year
+     * Links: YouTube, LinkedIn, GitHub (placeholder hrefs are fine)
+     * Styling: simple and minimal — consistent with the existing plain CSS aesthetic
+     * Position: static at the bottom of the page
+4. Output a numbered, structured plan with:
    - What to change
    - Which file and which section
    - Why the change improves the UI
-4. Keep the plan concrete and implementable — no vague suggestions
-5. End with a summary: total changes proposed, estimated effort (low/medium/high)
+5. Keep the plan concrete and implementable — no vague suggestions
+6. End with a summary: total changes proposed, estimated effort (low/medium/high)
 
 Tool access: Read, Glob, Grep only.
 Model: claude-sonnet-4-5
